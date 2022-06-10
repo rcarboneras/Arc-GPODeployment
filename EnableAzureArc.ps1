@@ -82,7 +82,7 @@ $workfolder = "C:\temp"
 $logpath = "$workfolder\AzureArcOnboarding.log" #Local log file
 ###########################################################################################################
 
-#region Functions Definition
+#region Functions and classes Definition
 
 Function Get-ArcAgentstatus {
     Param (
@@ -235,16 +235,17 @@ Function Update-ArcAgent {
     }
 
 }
-Function Get-RegistrationInfo {
-
-    $registrykey = "HKLM:\SOFTWARE\MICROSOFT\AzureArc"
-    $RegistrationInfo = (Get-ItemProperty $registrykey).RegistrationInfo
-    $Registrationkey = (Get-ItemProperty $registrykey).Registrationkey
-
-    [byte[]]$key = $Registrationkey -split "(\w{2})" | Where-Object { $_ -ne "" } | ForEach-Object { [System.String]::Format("{0:d}", [int]("0x$_")) }
-
-    $Reginfo = New-Object -TypeName PSCredential -ArgumentList "User", ($RegistrationInfo | ConvertTo-SecureString -Key $key)
-    return $Reginfo.GetNetworkCredential().Password
+Function Get-ServicePrincipalSecret {
+    try {
+        Import-Module (Join-Path $SourceFilesFullPath "AzureArcDeployment.psm1")
+        $encryptedSecret = Get-Content (Join-Path $SourceFilesFullPath encryptedServicePrincipalSecret)
+        $sps = [DpapiNgUtil]::UnprotectBase64($encryptedSecret)
+    }
+    catch {
+        Write-Log -msg "Could not fetch service principal secret: $($_.Exception)" -msgtype ERROR
+        return $false
+    }
+    return $sps
 }
 Function Add-SiteTag {
 
@@ -268,12 +269,12 @@ Function Connect-ArcAgent {
 
     $FinalTag = ($tags.GetEnumerator() | ForEach-Object -Process { "$($_.key)" + "=" + "'$($_.value)'" }) -join ","
 
-    $RegistrationInfo = Get-RegistrationInfo
+    $sps = Get-ServicePrincipalSecret
     
     if ($AgentProxy -ne "") {
         $Proxyconf = & "$env:ProgramW6432\AzureConnectedMachineAgent\azcmagent.exe" config set proxy.url $AgentProxy
     }
-    $ConnectionOuput = & "$env:ProgramW6432\AzureConnectedMachineAgent\azcmagent.exe" connect --service-principal-id $servicePrincipalClientId --service-principal-secret $RegistrationInfo --resource-group $ResourceGroup --tenant-id $tenantid --location $location --subscription-id $subscriptionid --cloud AzureCloud --tags $FinalTag --correlation-id $((New-Guid).guid)
+    $ConnectionOuput = & "$env:ProgramW6432\AzureConnectedMachineAgent\azcmagent.exe" connect --service-principal-id $servicePrincipalClientId --service-principal-secret $sps --resource-group $ResourceGroup --tenant-id $tenantid --location $location --subscription-id $subscriptionid --cloud AzureCloud --tags $FinalTag --correlation-id $((New-Guid).guid)
     
 
     if ($LastExitCode -eq 0) {

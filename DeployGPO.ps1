@@ -1,3 +1,4 @@
+#requires -module ActiveDirectory
 <#
 .DESCRIPTION
     ##########################################################################################
@@ -36,10 +37,9 @@
 
 #>
 
-
 Param (
     [Parameter(Mandatory = $True)]
-    [System.String]$DomainFQDN = "contoso.com",
+    [System.String]$DomainFQDN,
     [Parameter(Mandatory = $True)]
     [System.String]$ReportServerFQDN, # "server.contoso.com"
     [Parameter(Mandatory = $True)]
@@ -134,19 +134,6 @@ foreach ($fileSystemAccessRule in $fileSystemAccessRules) {
 #endregion
 
 
-#region Creating the encryption key
-
-#Generate Random key
-
-$Key = New-Object -TypeName Byte[] 32   # AES, 16, 24, or 32 Bytes
-[Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($Key) # Fills the $key with bytes
-
-#Encrypt the secret with the random.key
-$spsecretencrypted = ($Spsecret | ConvertTo-SecureString -AsPlainText -Force) | ConvertFrom-SecureString -Key $Key
-$keytostore = ($key | ForEach-Object { ("{0:x}" -f $_).PadLeft(2, '0') }) -join ""
-
-#endregion
-
 
 #region Replacing Custom Data in the scheduled task
 
@@ -201,20 +188,6 @@ else {
     catch { Write-Host "Could not add ReportServerFQDN:`n$(($_.Exception).Message)" -ForegroundColor Red ; exit }
 }
 
-#Replacing the RegistrationInfo in the registry preference task
-Write-Host "`nEncrypting the key in the registry preference..." -ForegroundColor Green
-
-$RegistryPreferencefile = "$BackupPath\{$Backupid}\DomainSysvol\GPO\Machine\Preferences\Registry\Registry.xml"
-
-try {
-    $xmlcontent = Get-Content -Path $RegistryPreferencefile -ErrorAction Stop
-    ($xmlcontent -replace "RegistrationKeyTOSET", $keytostore) -replace "RegistrationInfoTOSET", $spsecretencrypted | Out-File $RegistryPreferencefile -Encoding utf8 -Force -ErrorAction Stop
-    Write-Host "RegistrationInfo was successfully set in the registry preference task" -ForegroundColor Green
-}
-catch { Write-Host "Could not modify registry preference:`n$(($_.Exception).Message)" -ForegroundColor Red ; exit }
-
-
-
 #endregion
 
 #Creating the new GPO
@@ -228,6 +201,15 @@ try {
 catch { Write-Host "The Group Policy could not be created:`n$(($_.Exception).Message)" -ForegroundColor Red ; break }
 
 
+# Encrypting the SPSecret to be decrypted only by the Domain Controllers and the Domain Computers security groups
+
+$DomainComputersSID = "SID=" + $DomainComputersSID
+$DomainControllersSID = "SID=" + $DomainControllersSID
+$descriptor = @($DomainComputersSID, $DomainControllersSID) -join " OR "
+
+Import-Module $PSScriptRoot\AzureArcDeployment.psm1
+$encryptedSecret = [DpapiNgUtil]::ProtectBase64($descriptor, $spsecret)
+
 #Copying Script to Source files Subfolder path
 Write-Host "`nCopying Script EnableAzureArc.ps1 to path $AzureArcDeployPath ..." -ForegroundColor Green
 
@@ -239,9 +221,19 @@ try {
         Copy-Item -Path "$PSScriptRoot\EnableAzureArc.ps1" -Destination $AzureArcDeployPath -ErrorAction Stop
         Write-Host "Onboarding script `'EnableAzureArc.ps1`' successfully copied to $AzureArcDeployPath" -ForegroundColor Green
     }
+
+    if (Test-Path "$AzureArcDeployPath\AzureArcDeployment.psm1" -ErrorAction SilentlyContinue) {
+        Write-Host "File `'$AzureArcDeployPath\AzureArcDeployment.psm1`' already exists." -ForegroundColor Red; throw
+    }
+    else {
+        Copy-Item -Path "$PSScriptRoot\AzureArcDeployment.psm1" -Destination $AzureArcDeployPath -ErrorAction Stop
+        Write-Host "Onboarding script `'AzureArcDeployment.psm1`' successfully copied to $AzureArcDeployPath" -ForegroundColor Green
+    }
+
+    $encryptedSecret | Out-File -FilePath (Join-Path -Path $AzureArcDeployPath -ChildPath "encryptedServicePrincipalSecret") -Force
+
 }
 catch { Write-Host "Onboarding script could not be copied:`n$(($_.Exception).Message)" -ForegroundColor Red ; break }
-
 
 
 #Import the setting from the backup

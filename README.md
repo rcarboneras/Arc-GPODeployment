@@ -7,7 +7,7 @@ The project also contains Azure Workbooks to keep track of the onboarding proces
 
 - [DeployGPO.ps1](DeployGPO.ps1): PowerShell script to deploy the GPO in a certain AD domain
 - [EnableAzureArc.ps1](EnableAzureArc.ps1): PowerShell script that has to be placed in the network share and will execute the onboarding process.
-- [RenewSPSecret.ps1](RenewSPSecret.ps1): PowerShell script to renew the secret from the Service Principal used for the onboard of Azure Arc Servers.
+- [RenewSPSecretDPAPI.ps1](RenewSPSecret.ps1): PowerShell script to renew the secret from the Service Principal used for the onboard of Azure Arc Servers.
 - [ParseArcOnboardingPrerequisites.ps1](ParseArcOnboardingPrerequisites.ps1): PowerShell scripts that parses the information of the machines that didn't meet the onboard requirements.
 - [ArcGPO](ArcGPO): Folder structure that contains the GPO settings to be imported in AD
 - [ARMTemplates](ARMTemplates): Folder with Azure Function Template to monitor Azure Arc Agent version updates.
@@ -87,6 +87,11 @@ This is the full picture of the solution:
 
 
 ## ChangeLog
+
+### 2-Jun-2022
+
+* Changed Encryption method to DPAPI. No keys are stored in target servers
+* New PowerShell Script *RenewSPSecretDPAPI.ps1* to renew Service Principal Secret.
 
 ### 12-Apr-2022
 

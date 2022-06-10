@@ -22,7 +22,7 @@
             "name": "Subscription",
             "type": 6,
             "isRequired": true,
-            "value": "/subscriptions/9b262ffa-d4f9-4de0-9eb5-c844a5fead81",
+            "value": null,
             "typeSettings": {
               "additionalResourceOptions": [],
               "includeAll": false
@@ -41,7 +41,7 @@
             "crossComponentResources": [
               "{Subscription}"
             ],
-            "value": "/subscriptions/9b262ffa-d4f9-4de0-9eb5-c844a5fead81/resourceGroups/WAC/providers/Microsoft.OperationalInsights/workspaces/WACLATest",
+            "value": null,
             "typeSettings": {
               "additionalResourceOptions": [],
               "showDefault": false
@@ -59,7 +59,7 @@
             "label": "Time Range",
             "type": 4,
             "value": {
-              "durationMs": 86400000
+              "durationMs": 172800000
             },
             "typeSettings": {
               "selectableValues": [
@@ -136,9 +136,6 @@
         "query": "ArcOnboardingStatus_CL\r\n| where Computer like \"{ServerName}\"\r\n| summarize arg_max(TimeGenerated, *) by Computer\r\n| extend ArcCompatible = tostring (ArcCompatible_b)\r\n| summarize count() by ArcCompatible\r\n| sort by ArcCompatible",
         "size": 3,
         "title": "Distribution of Machines that pass Arc requirements",
-        "timeContext": {
-          "durationMs": 86400000
-        },
         "timeContextFromParameter": "TimeRage",
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -169,9 +166,6 @@
         "query": "ArcOnboardingStatus_CL\r\n| where Computer like \"{ServerName}\"\r\n| summarize arg_max(TimeGenerated, *) by Computer\r\n| extend ArcCompatible = tostring (ArcCompatible_b)\r\n| extend  AgentStatus = iff(AgentStatus_s == '','NoAgent',AgentStatus_s)\r\n| summarize count() by AgentStatus\r\n| sort by AgentStatus",
         "size": 3,
         "title": "Distribution of Machines by Agent Status",
-        "timeContext": {
-          "durationMs": 86400000
-        },
         "timeContextFromParameter": "TimeRage",
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -202,9 +196,6 @@
         "query": "ArcOnboardingStatus_CL\r\n| where Computer like \"{ServerName}\"\r\n| summarize arg_max(TimeGenerated, *) by Computer\r\n| summarize count() by PowershellVersion_s\r\n| sort by PowershellVersion_s",
         "size": 3,
         "title": "Distribution of Machines by PowerShell Version",
-        "timeContext": {
-          "durationMs": 86400000
-        },
         "timeContextFromParameter": "TimeRage",
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -235,9 +226,6 @@
         "query": "ArcOnboardingStatus_CL\r\n| where Computer like \"{ServerName}\"\r\n| summarize arg_max(TimeGenerated, *) by Computer\r\n| summarize count() by FrameworkVersion_s\r\n| sort by FrameworkVersion_s",
         "size": 3,
         "title": "Distribution of Machines by Framework Version",
-        "timeContext": {
-          "durationMs": 86400000
-        },
         "timeContextFromParameter": "TimeRage",
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -267,9 +255,6 @@
         "version": "KqlItem/1.0",
         "query": "ArcOnboardingStatus_CL\r\n| where Computer like \"{ServerName}\"\r\n| summarize arg_max(TimeGenerated, *) by Computer\r\n| extend  AgentStatus = iff(AgentStatus_s == '','NoAgent',AgentStatus_s)\r\n| extend ArcCompatible = iff(ArcCompatible_b == 1,\"True\",\"False\"), PowershellVersion =PowershellVersion_s, FrameworkVersion = FrameworkVersion_s, httpsProxy = iff(httpsProxy_s == \"\", \"Direct\", httpsProxy_s), AgentLastHeartbeat = AgentLastHeartbeat_s\r\n| extend AgentCodesUrl = \"https://docs.microsoft.com/en-us/azure/azure-arc/servers/troubleshoot-agent-onboard#agent-error-codes\"\r\n| project  TimeGenerated,Computer,OSVersion_s,ArcCompatible,PowershellVersion,FrameworkVersion,httpsProxy,AgentStatus,AgentErrorCode = AgentErrorCode_s, AgentErrorDetails_s,AgentErrorTimestamp=iff(AgentErrorTimestamp_t == '0001-01-01T00:00:00Z',datetime(null),AgentErrorTimestamp_t),AgentCodesUrl",
         "size": 2,
-        "timeContext": {
-          "durationMs": 86400000
-        },
         "timeContextFromParameter": "TimeRage",
         "showExportToExcel": true,
         "queryType": 0,
@@ -425,7 +410,8 @@
               "formatter": 11
             }
           ],
-          "rowLimit": 1000
+          "rowLimit": 1000,
+          "filter": true
         },
         "sortBy": []
       },
