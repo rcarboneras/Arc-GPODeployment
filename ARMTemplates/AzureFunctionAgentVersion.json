@@ -1,0 +1,148 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appnameprefix": {
+            "type": "string"
+        },
+        "storageAccountNameprefix": {
+            "type": "string",
+            "metadata": {
+                "description": "Prefix for the storage account used for the Function (max. 11 characters)"
+            }
+        },
+        "keyvaultname": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the keyvault where secrets are stored"
+            }
+        },
+        "keyvaultsecretWSId": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the secret that contains the Workspaceid"
+            }
+        },
+        "keyvaultsecretWSKey": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the secret that contains the Workspacekey"
+            }
+        },
+        "ServicePrincipalAppId": {
+            "type": "string",
+            "metadata": {
+                "description": "Application Id of the Service Principal used for Arc onboarding"
+            }
+        }
+    },
+    "variables": {
+        "functionname": "ArcAgentGetLatestVersion",
+        "appname": "[concat(parameters('appnameprefix'), uniqueString(resourceGroup().id))]",
+        "hostingPlanName": "[concat('ASP-',variables('appname'))]",
+        "storageAccountName": "[toLower(concat(parameters('storageAccountNameprefix'), uniqueString(resourceGroup().id)))]"
+    },
+    "resources": [
+        {
+            "apiVersion": "2019-06-01",
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "location": "[resourcegroup().location]",
+            "tags": {},
+            "kind": "StorageV2",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "properties": {
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2"
+            }
+        },
+        {
+            "apiVersion": "2021-02-01",
+            "name": "[variables('hostingPlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[resourcegroup().location]",
+            "kind": "",
+            "tags": {},
+            "dependsOn": [],
+            "properties": {
+                "name": "[variables('hostingPlanName')]"
+            },
+            "sku": {
+                "Tier": "Dynamic",
+                "Name": "Y1"
+            }
+        },
+        {
+            "apiVersion": "2021-02-01",
+            "name": "[variables('appname')]",
+            "type": "Microsoft.Web/sites",
+            "kind": "functionapp",
+            "location": "[resourcegroup().location]",
+            "tags": {},
+            "dependsOn": [
+                "[concat('Microsoft.Web/serverfarms/', variables('hostingPlanName'))]",
+                "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
+            ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "name": "[variables('appname')]",
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~4"
+                        },
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "powershell"
+                        },
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTSHARE",
+                            "value": "[concat(toLower(variables('appname')), 'b488')]"
+                        }
+                    ],
+                    "powerShellVersion": "~7"
+                },
+                "serverFarmId": "[concat(variables('hostingPlanName'))]",
+                "clientAffinityEnabled": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/functions",
+            "apiVersion": "2020-06-01",
+            "name": "[format('{0}/{1}', variables('appName'), variables('functionName'))]",
+            "properties": {
+                "config": {
+                    "Isdisabled": false,
+                    "bindings": [
+                        {
+                            "name": "Timer",
+                            "type": "timerTrigger",
+                            "direction": "in",
+                            "schedule": "0 30 9 * * *"
+                        }
+                    ]
+                },
+                "files": {
+                    "run.ps1": "[concat('# Input bindings are passed in via param block.\r\nparam($Timer)\r\n\r\n# Get the current universal time in the default string format.\r\n$currentUTCtime = (Get-Date).ToUniversalTime()\r\n\r\n# The ''IsPastDue'' property is ''true'' when the current function invocation is later than scheduled.\r\nif ($Timer.IsPastDue) {\r\n    Write-Host \"PowerShell timer is running late!\"\r\n}\r\n\r\n# Write an information log with the current time.\r\nWrite-Host \"PowerShell timer trigger function ran! TIME: $currentUTCtime\"\r\n\r\n\r\n#################\r\n# GLOBAL THINGS #\r\n#################\r\n\r\nSet-StrictMode -Version Latest\r\n\r\n#####################################\r\n# LOG ANALYTICS CUSTOM LOG FACILITY #\r\n#####################################\r\n\r\n$CustomerId = Get-AzKeyVaultSecret -VaultName ',  parameters('keyvaultname') ,' -Name ',  parameters('keyvaultsecretWSId') ,' -AsPlainText\r\n$SharedKey = Get-AzKeyVaultSecret -VaultName ',  parameters('keyvaultname') ,' -Name ', parameters('keyvaultsecretWSkey'),' -AsPlainText\r\n\r\nWrite-Host $CustomerId\r\n\r\nfunction WriteAgenVersionToLogAnalytics {\r\n    param (\r\n\r\n        [Parameter(Mandatory = $true)]\r\n        [string]\r\n        $AgentLatestVersion,\r\n\r\n        [Parameter(Mandatory = $true)]\r\n        [string]\r\n        $AgentLatestVersionDate,\r\n\r\n        [Parameter(Mandatory = $true)]\r\n        [array]\r\n        $AgentLatestVersionHistory\r\n                \r\n    )\r\n\r\n    # prepare body\r\n\r\n    $Body = [pscustomobject]@{\r\n        AgentLatestVersion = $AgentLatestVersion\r\n        AgentLatestVersionDate = $AgentLatestVersionDate\r\n        AgentLatestVersionHistory = $AgentLatestVersionHistory\r\n    } | ConvertTo-Json\r\n\r\n    # string to sign\r\n\r\n    $rfc1123date = [DateTime]::UtcNow.ToString(\"r\")\r\n\r\n    $StringToSign = \"POST\" + \"`n\" + $Body.Length + \"`n\" + \"application/json\" + \"`n\" + \"x-ms-date:\" + $rfc1123date + \"`n\" + \"/api/logs\"\r\n    $BytesToHash = [Text.Encoding]::UTF8.GetBytes($StringToSign)\r\n    $KeyBytes = [Convert]::FromBase64String($SharedKey)\r\n    $HMACSHA256 = New-Object System.Security.Cryptography.HMACSHA256\r\n    $HMACSHA256.Key = $KeyBytes\r\n    $CalculatedHash = $HMACSHA256.ComputeHash($BytesToHash)\r\n    $EncodedHash = [Convert]::ToBase64String($CalculatedHash)\r\n    $Authorization = ''SharedKey {0}:{1}'' -f $CustomerId, $EncodedHash\r\n\r\n    # call the REST API\r\n\r\n    $Uri = \"https://\" + $CustomerId + \".ods.opinsights.azure.com\" + \"/api/logs\" + \"?api-version=2016-04-01\"\r\n    $Headers = @{\r\n        \"Authorization\"        = $Authorization;\r\n        \"Log-Type\"             = $LogType;\r\n        \"x-ms-date\"            = $rfc1123date;\r\n        \"time-generated-field\" = $(Get-Date); # Optional field to specify the timestamp from the data. If not specified, Azure Monitor assumes the time is the message ingestion time\r\n    }\r\n\r\n    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12    # ensure Tls12 is used (on older systems)\r\n    try {\r\n        $Response = Invoke-WebRequest -Uri $Uri -Method Post -ContentType \"application/json\" -Headers $Headers -Body $Body -UseBasicParsing\r\n    }\r\n    catch {\r\n        write-host \"Send to LogAnalytics failed: $_\"\r\n    }\r\n}\r\n\r\nfunction WriteServicePrincipalToLogAnalytics {\r\n    param (\r\n\r\n        [Parameter(Mandatory = $true)]\r\n        $spdata\r\n                \r\n    )\r\n\r\n    # prepare body\r\n\r\n    $Body = $spdata | ConvertTo-Json\r\n\r\n    # string to sign\r\n\r\n    $rfc1123date = [DateTime]::UtcNow.ToString(\"r\")\r\n\r\n    $StringToSign = \"POST\" + \"`n\" + $Body.Length + \"`n\" + \"application/json\" + \"`n\" + \"x-ms-date:\" + $rfc1123date + \"`n\" + \"/api/logs\"\r\n    $BytesToHash = [Text.Encoding]::UTF8.GetBytes($StringToSign)\r\n    $KeyBytes = [Convert]::FromBase64String($SharedKey)\r\n    $HMACSHA256 = New-Object System.Security.Cryptography.HMACSHA256\r\n    $HMACSHA256.Key = $KeyBytes\r\n    $CalculatedHash = $HMACSHA256.ComputeHash($BytesToHash)\r\n    $EncodedHash = [Convert]::ToBase64String($CalculatedHash)\r\n    $Authorization = ''SharedKey {0}:{1}'' -f $CustomerId, $EncodedHash\r\n\r\n    # call the REST API\r\n\r\n    $Uri = \"https://\" + $CustomerId + \".ods.opinsights.azure.com\" + \"/api/logs\" + \"?api-version=2016-04-01\"\r\n    $Headers = @{\r\n        \"Authorization\"        = $Authorization;\r\n        \"Log-Type\"             = $LogType;\r\n        \"x-ms-date\"            = $rfc1123date;\r\n        \"time-generated-field\" = $(Get-Date); # Optional field to specify the timestamp from the data. If not specified, Azure Monitor assumes the time is the message ingestion time\r\n    }\r\n\r\n    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12    # ensure Tls12 is used (on older systems)\r\n    try {\r\n        $Response = Invoke-WebRequest -Uri $Uri -Method Post -ContentType \"application/json\" -Headers $Headers -Body $Body -UseBasicParsing\r\n    }\r\n    catch {\r\n        write-host \"Send to LogAnalytics failed: $_\"\r\n    }\r\n}\r\n########\r\n# MAIN #\r\n########\r\n\r\n##Post Agent Version Information\r\n\r\n$url = \"https://docs.microsoft.com/en-us/azure/azure-arc/servers/agent-release-notes\"\r\n\r\n$response = Invoke-WebRequest $url -UseBasicParsing\r\n\r\n# get latest Agent version and release datetime\r\n\r\n$regex = $response.Content | select-string -Pattern ''<h2\\sid=\"[\\w\\d-]*\">Version (?<Version>\\d{1,3}.\\d{1,3})\\s-\\s(?<Date>\\w*\\s\\d*)'' -AllMatches\r\nif ($null -eq $regex) {\r\n    write-host \"Version pattern not found. Check web page $($url) for changes.\"\r\n    break\r\n}\r\n$AgentLatestVersion = $regex.matches.groups[0].Groups[1].value\r\n$AgentLatestVersionDate = $regex.matches.groups[0].Groups[2].value\r\nwrite-host \"Latest version is $($AgentLatestVersion)\"\r\nwrite-host \"Latest version release date is $($AgentLatestVersionDate)\"\r\n\r\n# get Agent version history\r\n\r\n$AgentLatestVersionHistory = $regex.matches | ForEach-Object { \"$($_.Groups[0].groups[2].value): $($_.Groups[0].groups[1].value)\"}\r\n\r\nwrite-host \"Sending info to Log Analytics\"\r\n$LogType = \"AzureARCAgentLatestVersion\"\r\nWriteAgenVersionToLogAnalytics -AgentLatestVersion $AgentLatestVersion -AgentLatestVersionDate $AgentLatestVersionDate -AgentLatestVersionHistory $AgentLatestVersionHistory\r\n\r\n##Post Service Principal Information\r\n\r\n$app= Get-AzADApplication -Filter \"AppId eq ''',parameters('ServicePrincipalAppId'),'''\"\r\n$appName = $App.DisplayName\r\n$AppId = $App.AppId\r\n$secret = $App.PasswordCredentials\r\n$spdata = [ordered]@{\r\n    ServicePrincipalName = $AppName\r\n    SecretCreationDate = $secret.startdateTime\r\n    SecretExpirationDate = $secret.EndDateTime\r\n    AppId = $AppId\r\n}\r\n\r\nWrite-Host \"Service Princpipal information:\"\r\n$spdata\r\n$LogType = \"AzureArcServicePrincipalInfo\"\r\nWriteServicePrincipalToLogAnalytics -spdata $spdata\r\n\r\nwrite-host \"Sending info to Log Analytics\"\r\nwrite-host \"Done.\"')]"
+                },
+                "language": "powershell"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('appname'))]"
+            ]
+        }
+    ]
+}
