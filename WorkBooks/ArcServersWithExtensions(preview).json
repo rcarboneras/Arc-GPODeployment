@@ -1,0 +1,2200 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 11,
+      "content": {
+        "version": "LinkItem/1.0",
+        "style": "tabs",
+        "tabStyle": "bigger",
+        "links": [
+          {
+            "id": "6887617c-0750-469a-a5ee-2b1ef0c33b8a",
+            "cellValue": "tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Arc Servers",
+            "subTarget": "1",
+            "style": "link"
+          },
+          {
+            "id": "5cbbbcb3-f092-4624-a639-99354cc4595d",
+            "cellValue": "tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Arc Extensions Windows",
+            "subTarget": "2",
+            "style": "link"
+          },
+          {
+            "id": "d1301531-1f44-4c79-aef6-e056c569a90f",
+            "cellValue": "tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Arc Extension Linux",
+            "subTarget": "3",
+            "style": "link"
+          },
+          {
+            "id": "3f04b1b8-765f-4a79-9974-336e9f7589f6",
+            "cellValue": "tab",
+            "linkTarget": "parameter",
+            "linkLabel": "LogAnalytics",
+            "subTarget": "4",
+            "style": "link"
+          }
+        ]
+      },
+      "name": "links - 6"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "cf72b08b-e727-4a5e-b78f-84940a9726a3",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "Subscriptions",
+                  "type": 6,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "includeAll": true
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "defaultValue": "value::all"
+                },
+                {
+                  "id": "ce1d8e43-28b6-4fd4-8ebb-ad04a68d504f",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "WorkSpaces",
+                  "type": 5,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "where type =~ 'microsoft.operationalinsights/workspaces'\r\n| project id",
+                  "crossComponentResources": [
+                    "{Subscriptions}"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "defaultValue": "value::all",
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                },
+                {
+                  "id": "609f90be-cab1-43d1-8724-d192dd7a9f64",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "ShowOriginalTables",
+                  "label": "Show Original Tables",
+                  "type": 10,
+                  "value": "No",
+                  "typeSettings": {
+                    "additionalResourceOptions": [],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\r\n    \"Yes\",\r\n    \"No\"\r\n]"
+                }
+              ],
+              "style": "pills",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "parameters - 9"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "This workbook reflects the machines that are reporting to a Log Analytics Workspace vs. the servers that are already onboarded Azure Arc or are Azure VMS.\r\n\r\n\r\n\r\nThe result table shows the **machines reporting** in any **Log Analytics** workspace that ARE NOT **Azure VMS**, NOR **Azure Arc Machines**.",
+              "style": "info"
+            },
+            "name": "text - 6"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "Heartbeat\r\n| summarize  arg_max(TimeGenerated,*) by Resource\r\n| project ResourceId, Resource, Category, ComputerIP, SCAgentChannel\r\n| count\r\n| extend Metric = \"Log Analytics entries\"",
+              "size": 4,
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{WorkSpaces}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Metric",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "Count",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 0,
+                    "options": {
+                      "style": "decimal",
+                      "maximumFractionDigits": 2,
+                      "maximumSignificantDigits": 3
+                    }
+                  }
+                },
+                "showBorder": false
+              }
+            },
+            "customWidth": "50",
+            "name": "query - 4"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines' or type == 'microsoft.compute/virtualmachines'\r\n| extend ExtensionName = tostring(properties.type)\r\n| count\r\n| extend Metric = \"Arc & Azure entries\"",
+              "size": 4,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscriptions}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Metric"
+                },
+                "leftContent": {
+                  "columnMatch": "Count",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 0,
+                    "options": {
+                      "style": "decimal"
+                    }
+                  }
+                },
+                "showBorder": false
+              }
+            },
+            "customWidth": "50",
+            "name": "query - 5"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "Heartbeat\r\n| summarize  arg_max(TimeGenerated,*) by Resource\r\n| project ResourceId, Resource, Category, ComputerIP, SCAgentChannel,TimeGenerated\r\n| sort by Resource asc",
+              "size": 0,
+              "title": "Query Log Analytics for MMA",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{WorkSpaces}"
+              ],
+              "gridSettings": {
+                "rowLimit": 10000,
+                "filter": true
+              }
+            },
+            "conditionalVisibility": {
+              "parameterName": "ShowOriginalTables",
+              "comparison": "isEqualTo",
+              "value": "Yes"
+            },
+            "name": "Query - LA"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines' or type == 'microsoft.compute/virtualmachines'\r\n| extend ExtensionName = tostring(properties.type)\r\n| project id,name",
+              "size": 0,
+              "title": "Query Resource Graph for Machines",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "value::all"
+              ],
+              "gridSettings": {
+                "rowLimit": 10000,
+                "filter": true
+              }
+            },
+            "conditionalVisibility": {
+              "parameterName": "ShowOriginalTables",
+              "comparison": "isEqualTo",
+              "value": "Yes"
+            },
+            "name": "Query Graph"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "{\"version\":\"Merge/1.0\",\"merges\":[{\"id\":\"ffbd6be0-0895-45b7-81a1-99b7222b60bd\",\"mergeType\":\"leftanti\",\"leftTable\":\"Query - LA\",\"rightTable\":\"Query Graph\",\"leftColumn\":\"Resource\",\"rightColumn\":\"name\"}],\"projectRename\":[{\"originalName\":\"ResourceId\",\"mergedName\":\"ResourceId\",\"fromId\":\"unknown\"},{\"originalName\":\"Resource\",\"mergedName\":\"Resource\",\"fromId\":\"unknown\"},{\"originalName\":\"Category\",\"mergedName\":\"Category\",\"fromId\":\"unknown\"},{\"originalName\":\"ComputerIP\",\"mergedName\":\"ComputerIP\",\"fromId\":\"unknown\"},{\"originalName\":\"SCAgentChannel\",\"mergedName\":\"SCAgentChannel\",\"fromId\":\"unknown\"},{\"originalName\":\"[Query - LA].ResourceId\",\"mergedName\":\"Resource Id\",\"fromId\":\"ffbd6be0-0895-45b7-81a1-99b7222b60bd\"},{\"originalName\":\"[Query - LA].Resource\",\"mergedName\":\"Resource Name\",\"fromId\":\"ffbd6be0-0895-45b7-81a1-99b7222b60bd\"},{\"originalName\":\"[Query - LA].Category\",\"mergedName\":\"Category1\",\"fromId\":\"ffbd6be0-0895-45b7-81a1-99b7222b60bd\"},{\"originalName\":\"[Query - LA].ComputerIP\",\"mergedName\":\"ComputerIP1\",\"fromId\":\"ffbd6be0-0895-45b7-81a1-99b7222b60bd\"},{\"originalName\":\"[Query - LA].SCAgentChannel\",\"mergedName\":\"SCAgentChannel1\",\"fromId\":\"ffbd6be0-0895-45b7-81a1-99b7222b60bd\"},{\"originalName\":\"[Query - LA].TimeGenerated\",\"mergedName\":\"TimeGenerated\",\"fromId\":\"unknown\"}]}",
+              "size": 0,
+              "title": "Machines in Log Analytics but not in Arc nor in Azure VMs",
+              "queryType": 7,
+              "gridSettings": {
+                "sortBy": [
+                  {
+                    "itemKey": "TimeGenerated",
+                    "sortOrder": 2
+                  }
+                ]
+              },
+              "sortBy": [
+                {
+                  "itemKey": "TimeGenerated",
+                  "sortOrder": 2
+                }
+              ]
+            },
+            "showPin": false,
+            "name": "query - 2"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "4"
+      },
+      "name": "Log Analytics"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "parameters": [
+                {
+                  "id": "4c60a556-5c66-4673-abb9-e8eae499c4b1",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "Subscription",
+                  "type": 6,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "includeAll": true,
+                    "showDefault": false
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "value": [
+                    "value::all"
+                  ]
+                }
+              ],
+              "style": "pills",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "conditionalVisibility": {
+              "parameterName": "tab",
+              "comparison": "isEqualTo",
+              "value": "1"
+            },
+            "name": "parameters - 7 - Copy"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "parameters": [
+                {
+                  "id": "cc87c729-ab54-440b-bdc6-00580dbbc0be",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "MachineType",
+                  "label": "Machine Type",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "value": [
+                    "value::all"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\r\n     {\"value\": \"Microsoft.hybridcompute/machines\", \"label\": \"Azure Arc Servers\"},\r\n     {\"value\": \"Microsoft.Compute/virtualMachines\", \"label\": \"Azure Virtual Machines\"}\r\n]",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "defaultValue": "value::all"
+                },
+                {
+                  "id": "894c1996-8235-4c35-beaa-21ca86c13695",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "Extensions",
+                  "type": 2,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ]
+                  },
+                  "jsonData": " [\r\n    {\"value\": \"DependencyAgentLinux\", \"label\": \"DependencyAgentLinux\"},\r\n    {\"value\": \"OmsAgentForLinux\", \"label\": \"OmsAgentForLinux\"}\r\n ]",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "defaultValue": "value::all",
+                  "value": [
+                    "OmsAgentForLinux"
+                  ]
+                },
+                {
+                  "id": "add7484c-1a00-489e-949b-18196f879711",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "DiscoveredExtensions",
+                  "label": "Discovered Extensions",
+                  "type": 1,
+                  "isRequired": true,
+                  "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines/extensions'\r\n| extend ExtensionName = tostring(properties.type)\r\n| distinct  ExtensionName\r\n| where ExtensionName like \"Linux\"",
+                  "crossComponentResources": [
+                    "{Subscription}"
+                  ],
+                  "typeSettings": {
+                    "multiLineText": true,
+                    "editorLanguage": "text"
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                }
+              ],
+              "style": "pills",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "name": "parameters - 8"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "# Azure Arc Servers Extensions (Linux)"
+            },
+            "name": "text - 8"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| extend\r\n    JoinID = toupper(id),\r\n\tOSName = tostring(properties.osProfile.computerName),\r\n    OSType = tostring(properties.osName),\r\n    ArcServerStatus = tostring(properties.status)\r\n| where ArcServerStatus == \"Connected\"\r\n| join kind=leftouter(\r\n    resources\r\n| where type == 'microsoft.hybridcompute/machines/extensions'\r\n| where properties.type in ({Extensions})\r\n| extend\r\n        VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),\r\n        ExtensionName = tostring(properties.type),\r\n\t\tVersion = tostring(properties.instanceView.typeHandlerVersion),\r\n\t\tStatus = tostring (properties.provisioningState)\r\n) on $left.JoinID == $right.VMId\r\n| where OSType == 'linux'\r\n| extend ArcServer = id\r\n| extend VersionNumber = pack(ExtensionName, Version)\r\n| extend ProvisionState = pack(ExtensionName, Status)\r\n| summarize ExtVersions = make_bag(VersionNumber),ExtProvision = make_bag(ProvisionState) by ArcServer, OSType, OSName, ArcServerStatus\r\n| extend OmsAgentForLinuxversion = (parse_json(ExtVersions)).OmsAgentForLinux, OmsAgentForLinux = (parse_json(ExtProvision)).OmsAgentForLinux\r\n| project OmsAgentForLinux\r\n| summarize count() by tostring(OmsAgentForLinux)",
+              "size": 3,
+              "title": "Oms Agent For Linux",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Succeeded",
+                    "color": "green",
+                    "comment": ""
+                  },
+                  {
+                    "seriesName": "",
+                    "label": "Not Present",
+                    "color": "gray"
+                  },
+                  {
+                    "seriesName": "Failed",
+                    "color": "red"
+                  },
+                  {
+                    "seriesName": "Deleting",
+                    "color": "redBright"
+                  }
+                ]
+              }
+            },
+            "customWidth": "25",
+            "name": "query - 2"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| extend\r\n    JoinID = toupper(id),\r\n\tOSName = tostring(properties.osProfile.computerName),\r\n    OSType = tostring(properties.osName),\r\n    ArcServerStatus = tostring(properties.status)\r\n| where ArcServerStatus == \"Connected\"\r\n| join kind=leftouter(\r\n    resources\r\n| where type == 'microsoft.hybridcompute/machines/extensions'\r\n| where properties.type in ({Extensions})\r\n| extend\r\n        VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),\r\n        ExtensionName = tostring(properties.type),\r\n\t\tVersion = tostring(properties.instanceView.typeHandlerVersion),\r\n\t\tStatus = tostring (properties.provisioningState)\r\n) on $left.JoinID == $right.VMId\r\n| where OSType == 'linux'\r\n| extend ArcServer = id\r\n| extend VersionNumber = pack(ExtensionName, Version)\r\n| extend ProvisionState = pack(ExtensionName, Status)\r\n| summarize ExtVersions = make_bag(VersionNumber),ExtProvision = make_bag(ProvisionState) by ArcServer, OSType, OSName, ArcServerStatus\r\n| extend DependencyAgentLinuxversion = (parse_json(ExtVersions)).DependencyAgentLinux, DependencyAgentLinux = (parse_json(ExtProvision)).DependencyAgentLinux\r\n| project DependencyAgentLinux\r\n| summarize count() by tostring(DependencyAgentLinux)",
+              "size": 3,
+              "title": "Dependency Agent for Linux",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Succeeded",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "",
+                    "label": "Not Present",
+                    "color": "gray"
+                  },
+                  {
+                    "seriesName": "Failed",
+                    "color": "red"
+                  },
+                  {
+                    "seriesName": "Deleting",
+                    "color": "redBright"
+                  }
+                ]
+              }
+            },
+            "customWidth": "75",
+            "name": "query - 2 - Copy"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "889211ce-4505-429c-a299-f0970e98d488",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "OmsAgentForLinuxStatus",
+                  "type": 10,
+                  "typeSettings": {
+                    "additionalResourceOptions": [],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\r\n {\"value\": \"Succeeded\", \"label\": \"Succeeded\"},\r\n {\"value\": \"Creating\", \"label\": \"Creating\"},\r\n {\"value\": \"Updating\", \"label\": \"Updating\"},\r\n {\"value\": \"Deleting\", \"label\": \"Deleting\"},\r\n {\"value\": \"Failed\", \"label\": \"Failed\"},\r\n {\"value\": \"<blank>\", \"label\": \"NotPresent\"}\r\n]\r\n",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  }
+                },
+                {
+                  "id": "6f86635c-a9d5-4f36-8de3-d9728299b636",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "DependencyAgentLinuxStatus",
+                  "type": 10,
+                  "typeSettings": {
+                    "additionalResourceOptions": [],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\r\n {\"value\": \"Succeeded\", \"label\": \"Succeeded\"},\r\n {\"value\": \"Creating\", \"label\": \"Creating\"},\r\n {\"value\": \"Updating\", \"label\": \"Updating\"},\r\n {\"value\": \"Deleting\", \"label\": \"Deleting\"},\r\n {\"value\": \"Failed\", \"label\": \"Failed\"},\r\n {\"value\": \"<blank>\", \"label\": \"NotPresent\"}\r\n]",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  }
+                }
+              ],
+              "style": "formHorizontal",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "customWidth": "45",
+            "name": "parameters - 8"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "parameters": [
+                {
+                  "id": "4fc5dc47-6cf5-418b-b649-70ed4a33aced",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "ArcServerStatus",
+                  "type": 2,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| extend ArcServerStatus = tostring(properties.status)\r\n| distinct ArcServerStatus",
+                  "crossComponentResources": [
+                    "{Subscription}"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "defaultValue": "value::all",
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                }
+              ],
+              "style": "pills",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "customWidth": "25",
+            "name": "parameters - 10"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| extend\r\n    JoinID = toupper(id),\r\n\tOSName = tostring(properties.osProfile.computerName),\r\n    OSType = tostring(properties.osName),\r\n    ArcServerStatus = tostring(properties.status)\r\n| where ArcServerStatus in ({ArcServerStatus})\r\n| join kind=leftouter(\r\n    resources\r\n| where type == 'microsoft.hybridcompute/machines/extensions'\r\n| where properties.type in ({Extensions})\r\n| extend\r\n        VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),\r\n        ExtensionName = tostring(properties.type),\r\n\t\tVersion = tostring(properties.instanceView.typeHandlerVersion),\r\n\t\tStatus = tostring (properties.provisioningState)\r\n) on $left.JoinID == $right.VMId\r\n| where OSType in ('linux')\r\n| extend ArcServer = id\r\n| extend VersionNumber = pack(ExtensionName, Version)\r\n| extend ProvisionState = pack(ExtensionName, Status)\r\n| summarize ExtVersions = make_bag(VersionNumber),ExtProvision = make_bag(ProvisionState) by ArcServer, OSType, OSName, ArcServerStatus\r\n| extend OmsAgentForLinuxversion = tostring((parse_json(ExtVersions)).OmsAgentForLinux), OmsAgentForLinux = iff(isnotnull((parse_json(ExtProvision)).OmsAgentForLinux),(parse_json(ExtProvision)).OmsAgentForLinux,\"<blank>\")\r\n| extend DependencyAgentLinuxversion = tostring((parse_json(ExtVersions)).DependencyAgentLinux), DependencyAgentLinux = iff(isnotnull((parse_json(ExtProvision)).DependencyAgentLinux),(parse_json(ExtProvision)).DependencyAgentLinux,\"<blank>\")\r\n| where \"{OmsAgentForLinuxStatus}\"==\"\" or OmsAgentForLinux == \"{OmsAgentForLinuxStatus:value}\"\r\n| where \"{DependencyAgentLinuxStatus}\"==\"\" or DependencyAgentLinux == \"{DependencyAgentLinuxStatus:value}\"\r\n| count\r\n| extend Metric = \"Filtered Arc Servers\"",
+              "size": 3,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "showBorder": false,
+                "titleContent": {
+                  "columnMatch": "Metric",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "Count",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                }
+              }
+            },
+            "customWidth": "25",
+            "name": "query - 9"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| extend\r\n    JoinID = toupper(id),\r\n\tOSName = tostring(properties.osProfile.computerName),\r\n    OSType = tostring(properties.osName),\r\n    ArcServerStatus = tostring(properties.status)\r\n| where ArcServerStatus in ({ArcServerStatus})\r\n| join kind=leftouter(\r\n    resources\r\n| where type == 'microsoft.hybridcompute/machines/extensions'\r\n| where properties.type in ({Extensions})\r\n| extend\r\n        VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),\r\n        ExtensionName = tostring(properties.type),\r\n\t\tVersion = tostring(properties.instanceView.typeHandlerVersion),\r\n\t\tStatus = tostring (properties.provisioningState)\r\n) on $left.JoinID == $right.VMId\r\n| where OSType in ('linux')\r\n| extend ArcServer = id\r\n| extend VersionNumber = pack(ExtensionName, Version)\r\n| extend ProvisionState = pack(ExtensionName, Status)\r\n| summarize ExtVersions = make_bag(VersionNumber),ExtProvision = make_bag(ProvisionState) by ArcServer, OSType, OSName, ArcServerStatus\r\n| extend OmsAgentForLinuxversion = tostring((parse_json(ExtVersions)).OmsAgentForLinux), OmsAgentForLinux = iff(isnotnull((parse_json(ExtProvision)).OmsAgentForLinux),(parse_json(ExtProvision)).OmsAgentForLinux,\"<blank>\")\r\n| extend DependencyAgentLinuxversion = tostring((parse_json(ExtVersions)).DependencyAgentLinux), DependencyAgentLinux = iff(isnotnull((parse_json(ExtProvision)).DependencyAgentLinux),(parse_json(ExtProvision)).DependencyAgentLinux,\"<blank>\")\r\n| extend AzureMonitorWindowsAgentversion = tostring((parse_json(ExtVersions)).AzureMonitorWindowsAgent), AzureMonitorWindowsAgent = iff(isnotnull((parse_json(ExtProvision)).AzureMonitorWindowsAgent),(parse_json(ExtProvision)).AzureMonitorWindowsAgent,\"<blank>\")\r\n| where \"{OmsAgentForLinuxStatus}\"==\"\" or OmsAgentForLinux == \"{OmsAgentForLinuxStatus:value}\"\r\n| where \"{DependencyAgentLinuxStatus}\"==\"\" or DependencyAgentLinux == \"{DependencyAgentLinuxStatus:value}\"\r\n| project ArcServer, ArcServerStatus, OSType,\r\nOmsAgentForLinux,OmsAgentForLinuxversion,\r\nDependencyAgentLinux,DependencyAgentLinuxversion,\r\nAzureMonitorWindowsAgent,AzureMonitorWindowsAgentversion\r\n| sort by OmsAgentForLinuxversion",
+              "size": 2,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "OmsAgentForLinux",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "<blank>",
+                          "text": ""
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"OmsAgentForLinuxversion\"] ({0})"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"OmsAgentForLinuxversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "OmsAgentForLinuxversion",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "DependencyAgentLinux",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "<blank>",
+                          "text": ""
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"DependencyAgentLinuxversion\"] ({0})"
+                        },
+                        {
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"DependencyAgentLinuxversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "DependencyAgentLinuxversion",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "MicrosoftMonitoringAgent",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "<blank>",
+                          "text": ""
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"MicrosoftMonitoringAgentversion\"] ({0})"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"MicrosoftMonitoringAgentversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "MicrosoftMonitoringAgentversion",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "DependencyAgentWindows",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "<blank>",
+                          "text": ""
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"DependencyAgentWindowsversion\"] ({0})"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"DependencyAgentWindowsversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "DependencyAgentWindowsversion",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "WindowsAgentAzureSecurityCenter",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "<blank>",
+                          "text": ""
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"WindowsAgentAzureSecurityCenterversion\"]({0})"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"WindowsAgentAzureSecurityCenterversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "WindowsAgentAzureSecurityCenterversion",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "MDEWindows",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "<blank>",
+                          "text": ""
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"MDEWindowsversion\"] ({0})"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"MDEWindowsversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "MDEWindowsversion",
+                    "formatter": 5
+                  }
+                ],
+                "rowLimit": 2000,
+                "filter": true,
+                "sortBy": [
+                  {
+                    "itemKey": "AzureMonitorWindowsAgent",
+                    "sortOrder": 2
+                  }
+                ]
+              },
+              "sortBy": [
+                {
+                  "itemKey": "AzureMonitorWindowsAgent",
+                  "sortOrder": 2
+                }
+              ]
+            },
+            "name": "query - 5"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "3"
+      },
+      "name": "Arc Extensions Linux"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "parameters": [
+                {
+                  "id": "4c60a556-5c66-4673-abb9-e8eae499c4b1",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "Subscription",
+                  "type": 6,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "includeAll": true,
+                    "showDefault": false
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "value": [
+                    "value::all"
+                  ]
+                }
+              ],
+              "style": "pills",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "conditionalVisibility": {
+              "parameterName": "tab",
+              "comparison": "isEqualTo",
+              "value": "1"
+            },
+            "name": "parameters - 7 - Copy"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "cc87c729-ab54-440b-bdc6-00580dbbc0be",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "OSType",
+                  "label": "Operating System",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "value": [
+                    "windows"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\r\n    \"windows\",\r\n    \"linux\"\r\n]",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "defaultValue": "value::all"
+                },
+                {
+                  "id": "add7484c-1a00-489e-949b-18196f879711",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "Extensions",
+                  "type": 2,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "value": [
+                    "MDE.Windows",
+                    "WindowsAgent.AzureSecurityCenter",
+                    "WindowsAgent.SqlServer",
+                    "DependencyAgentWindows",
+                    "MicrosoftMonitoringAgent",
+                    "AzureMonitorWindowsAgent",
+                    "HybridWorkerForWindows"
+                  ],
+                  "typeSettings": {
+                    "limitSelectTo": 7,
+                    "additionalResourceOptions": [],
+                    "showDefault": false
+                  },
+                  "jsonData": " [\r\n    {\"value\": \"AzureMonitorWindowsAgent\", \"label\": \"AzureMonitorWindowsAgent\"},\r\n    {\"value\": \"MicrosoftMonitoringAgent\", \"label\": \"MicrosoftMonitoringAgent\"},\r\n    {\"value\": \"DependencyAgentWindows\", \"label\": \"DependencyAgentWindows\"},\r\n    {\"value\": \"AdminCenter\", \"label\": \"AdminCenter\"},\r\n    {\"value\": \"HybridWorkerForWindows\", \"label\": \"HybridWorkerForWindows\"},\r\n    {\"value\": \"WindowsAgent.SqlServer\", \"label\": \"WindowsAgent.SqlServer\"},\r\n    {\"value\": \"WindowsAgent.AzureSecurityCenter\", \"label\": \"WindowsAgent.AzureSecurityCenter\"},\r\n    {\"value\": \"MDE.Windows\", \"label\": \"MDE.Windows\"}\r\n ]",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  }
+                },
+                {
+                  "id": "d0ee4503-c907-4b87-ba8c-f374f758ffb7",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "DiscoveredExtensions",
+                  "label": "Discovered Extensions",
+                  "type": 1,
+                  "isRequired": true,
+                  "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines/extensions'\r\n| extend ExtensionName = tostring(properties.type)\r\n| distinct  ExtensionName\r\n| where ExtensionName notlike \"Linux\"",
+                  "crossComponentResources": [
+                    "{Subscription}"
+                  ],
+                  "typeSettings": {
+                    "multiLineText": true,
+                    "editorLanguage": "text",
+                    "multiLineHeight": 3
+                  },
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                }
+              ],
+              "style": "pills",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "parameters - 8"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "# Azure Arc Servers Extensions (Windows)\r\n"
+            },
+            "conditionalVisibility": {
+              "parameterName": "tab",
+              "comparison": "isEqualTo",
+              "value": "2"
+            },
+            "name": "text - 0 - Copy"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| extend\r\n    JoinID = toupper(id),\r\n\tOSName = tostring(properties.osProfile.computerName),\r\n    OSType = tostring(properties.osName),\r\n    ArcServerStatus = tostring(properties.status)\r\n| where ArcServerStatus == \"Connected\"\r\n| join kind=leftouter(\r\n    resources\r\n| where type == 'microsoft.hybridcompute/machines/extensions'\r\n| where properties.type in ({Extensions})\r\n| extend\r\n        VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),\r\n        ExtensionName = tostring(properties.type),\r\n\t\tVersion = tostring(properties.instanceView.typeHandlerVersion),\r\n\t\tStatus = tostring (properties.provisioningState)\r\n) on $left.JoinID == $right.VMId\r\n| where OSType in ('windows')\r\n| extend ArcServer = id\r\n| extend VersionNumber = pack(ExtensionName, Version)\r\n| extend ProvisionState = pack(ExtensionName, Status)\r\n| summarize ExtVersions = make_bag(VersionNumber),ExtProvision = make_bag(ProvisionState) by ArcServer, OSType, OSName, ArcServerStatus\r\n| extend MicrosoftMonitoringAgentversion = (parse_json(ExtVersions)).MicrosoftMonitoringAgent, MicrosoftMonitoringAgent = (parse_json(ExtProvision)).MicrosoftMonitoringAgent\r\n| project MicrosoftMonitoringAgent\r\n| summarize count() by tostring(MicrosoftMonitoringAgent)",
+              "size": 3,
+              "title": "Microsoft Monitoring Agent",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Succeeded",
+                    "color": "green",
+                    "comment": ""
+                  },
+                  {
+                    "seriesName": "",
+                    "label": "Not Present",
+                    "color": "gray"
+                  },
+                  {
+                    "seriesName": "Failed",
+                    "color": "red"
+                  },
+                  {
+                    "seriesName": "Deleting",
+                    "color": "redBright"
+                  }
+                ]
+              }
+            },
+            "customWidth": "25",
+            "name": "query - 2"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| extend\r\n    JoinID = toupper(id),\r\n\tOSName = tostring(properties.osProfile.computerName),\r\n    OSType = tostring(properties.osName),\r\n    ArcServerStatus = tostring(properties.status)\r\n| where ArcServerStatus == \"Connected\"\r\n| join kind=leftouter(\r\n    resources\r\n| where type == 'microsoft.hybridcompute/machines/extensions'\r\n| where properties.type in ({Extensions})\r\n| extend\r\n        VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),\r\n        ExtensionName = tostring(properties.type),\r\n\t\tVersion = tostring(properties.instanceView.typeHandlerVersion),\r\n\t\tStatus = tostring (properties.provisioningState)\r\n) on $left.JoinID == $right.VMId\r\n| where OSType in ('windows')\r\n| extend ArcServer = id\r\n| extend VersionNumber = pack(ExtensionName, Version)\r\n| extend ProvisionState = pack(ExtensionName, Status)\r\n| summarize ExtVersions = make_bag(VersionNumber),ExtProvision = make_bag(ProvisionState) by ArcServer, OSType, OSName, ArcServerStatus\r\n| extend MDEWindowsversion = (parse_json(ExtVersions))['MDE.Windows'], MDEWindows = (parse_json(ExtProvision)).['MDE.Windows']\r\n| project MDEWindows\r\n| summarize count() by tostring(MDEWindows)",
+              "size": 3,
+              "title": "Microsoft Defender for Endpoint",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Succeeded",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "",
+                    "label": "Not Present",
+                    "color": "gray"
+                  },
+                  {
+                    "seriesName": "Failed",
+                    "color": "red"
+                  },
+                  {
+                    "seriesName": "Deleting",
+                    "color": "redBright"
+                  }
+                ]
+              }
+            },
+            "customWidth": "25",
+            "name": "query - 2 - Copy"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| extend\r\n    JoinID = toupper(id),\r\n\tOSName = tostring(properties.osProfile.computerName),\r\n    OSType = tostring(properties.osName),\r\n    ArcServerStatus = tostring(properties.status)\r\n| where ArcServerStatus == \"Connected\"\r\n| join kind=leftouter(\r\n    resources\r\n| where type == 'microsoft.hybridcompute/machines/extensions'\r\n| where properties.type in ({Extensions})\r\n| extend\r\n        VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),\r\n        ExtensionName = tostring(properties.type),\r\n\t\tVersion = tostring(properties.instanceView.typeHandlerVersion),\r\n\t\tStatus = tostring (properties.provisioningState)\r\n) on $left.JoinID == $right.VMId\r\n| where OSType in ('windows')\r\n| extend ArcServer = id\r\n| extend VersionNumber = pack(ExtensionName, Version)\r\n| extend ProvisionState = pack(ExtensionName, Status)\r\n| summarize ExtVersions = make_bag(VersionNumber),ExtProvision = make_bag(ProvisionState) by ArcServer, OSType, OSName, ArcServerStatus\r\n| extend WindowsAgentAzureSecurityCenterversion = (parse_json(ExtVersions))['WindowsAgent.AzureSecurityCenter'], WindowsAgentAzureSecurityCenter = (parse_json(ExtProvision)).['WindowsAgent.AzureSecurityCenter']\r\n| project WindowsAgentAzureSecurityCenter\r\n| summarize count() by tostring(WindowsAgentAzureSecurityCenter)",
+              "size": 3,
+              "title": "Defender for Cloud Qualys extension",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Succeeded",
+                    "label": "",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "",
+                    "label": "Not Present",
+                    "color": "gray"
+                  },
+                  {
+                    "seriesName": "Failed",
+                    "color": "red"
+                  },
+                  {
+                    "seriesName": "Deleting",
+                    "color": "redBright"
+                  }
+                ]
+              }
+            },
+            "customWidth": "25",
+            "name": "query - 2 - Copy - Copy"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| extend\r\n    JoinID = toupper(id),\r\n\tOSName = tostring(properties.osProfile.computerName),\r\n    OSType = tostring(properties.osName),\r\n    ArcServerStatus = tostring(properties.status)\r\n| where ArcServerStatus == \"Connected\"\r\n| join kind=leftouter(\r\n    resources\r\n| where type == 'microsoft.hybridcompute/machines/extensions'\r\n| where properties.type in ({Extensions})\r\n| extend\r\n        VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),\r\n        ExtensionName = tostring(properties.type),\r\n\t\tVersion = tostring(properties.instanceView.typeHandlerVersion),\r\n\t\tStatus = tostring (properties.provisioningState)\r\n) on $left.JoinID == $right.VMId\r\n| where OSType in ('windows')\r\n| extend ArcServer = id\r\n| extend VersionNumber = pack(ExtensionName, Version)\r\n| extend ProvisionState = pack(ExtensionName, Status)\r\n| summarize ExtVersions = make_bag(VersionNumber),ExtProvision = make_bag(ProvisionState) by ArcServer, OSType, OSName, ArcServerStatus\r\n| extend DependencyAgentWindowsversion = (parse_json(ExtVersions)).DependencyAgentWindows, DependencyAgentWindows = (parse_json(ExtProvision)).DependencyAgentWindows\r\n| project DependencyAgentWindows\r\n| summarize count() by tostring(DependencyAgentWindows)",
+              "size": 3,
+              "title": "Dependency Agent",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "",
+                    "label": "Not Present",
+                    "color": "gray"
+                  },
+                  {
+                    "seriesName": "Succeeded",
+                    "color": "green"
+                  }
+                ]
+              }
+            },
+            "customWidth": "25",
+            "name": "query - 2 - Copy"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "889211ce-4505-429c-a299-f0970e98d488",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "MonitoringAgentStatus",
+                  "type": 10,
+                  "typeSettings": {
+                    "additionalResourceOptions": [],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\r\n {\"value\": \"Succeeded\", \"label\": \"Succeeded\"},\r\n {\"value\": \"Creating\", \"label\": \"Creating\"},\r\n {\"value\": \"Updating\", \"label\": \"Updating\"},\r\n {\"value\": \"Deleting\", \"label\": \"Deleting\"},\r\n {\"value\": \"Failed\", \"label\": \"Failed\"},\r\n {\"value\": \"<blank>\", \"label\": \"NotPresent\"}\r\n]\r\n",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  }
+                },
+                {
+                  "id": "6f86635c-a9d5-4f36-8de3-d9728299b636",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "DependencyAgentStatus",
+                  "type": 10,
+                  "typeSettings": {
+                    "additionalResourceOptions": [],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\r\n {\"value\": \"Succeeded\", \"label\": \"Succeeded\"},\r\n {\"value\": \"Creating\", \"label\": \"Creating\"},\r\n {\"value\": \"Updating\", \"label\": \"Updating\"},\r\n {\"value\": \"Deleting\", \"label\": \"Deleting\"},\r\n {\"value\": \"Failed\", \"label\": \"Failed\"},\r\n {\"value\": \"<blank>\", \"label\": \"NotPresent\"}\r\n]",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  }
+                },
+                {
+                  "id": "e4b863cf-239a-4f8c-b750-80d41a48bd1f",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "DefenderForEndpointStatus",
+                  "type": 10,
+                  "typeSettings": {
+                    "additionalResourceOptions": [],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\r\n {\"value\": \"Succeeded\", \"label\": \"Succeeded\"},\r\n {\"value\": \"Creating\", \"label\": \"Creating\"},\r\n {\"value\": \"Updating\", \"label\": \"Updating\"},\r\n {\"value\": \"Deleting\", \"label\": \"Deleting\"},\r\n {\"value\": \"Failed\", \"label\": \"Failed\"},\r\n {\"value\": \"<blank>\", \"label\": \"NotPresent\"}\r\n]",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  }
+                },
+                {
+                  "id": "8836930c-1bea-4fc5-9177-e20696478fdd",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "QualysExtensionStatus",
+                  "type": 10,
+                  "typeSettings": {
+                    "additionalResourceOptions": [],
+                    "showDefault": false
+                  },
+                  "jsonData": "[\r\n {\"value\": \"Succeeded\", \"label\": \"Succeeded\"},\r\n {\"value\": \"Creating\", \"label\": \"Creating\"},\r\n {\"value\": \"Updating\", \"label\": \"Updating\"},\r\n {\"value\": \"Deleting\", \"label\": \"Deleting\"},\r\n {\"value\": \"Failed\", \"label\": \"Failed\"},\r\n {\"value\": \"<blank>\", \"label\": \"NotPresent\"}\r\n]",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  }
+                }
+              ],
+              "style": "formHorizontal",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "customWidth": "50",
+            "name": "parameters - 8"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "parameters": [
+                {
+                  "id": "4fc5dc47-6cf5-418b-b649-70ed4a33aced",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "ArcServerStatus",
+                  "type": 2,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| extend ArcServerStatus = tostring(properties.status)\r\n| distinct ArcServerStatus",
+                  "crossComponentResources": [
+                    "{Subscription}"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "defaultValue": "value::all",
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                }
+              ],
+              "style": "pills",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "customWidth": "25",
+            "name": "parameters - 10"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| extend\r\n    JoinID = toupper(id),\r\n\tOSName = tostring(properties.osProfile.computerName),\r\n    OSType = tostring(properties.osName),\r\n    ArcServerStatus = tostring(properties.status)\r\n| where ArcServerStatus in ({ArcServerStatus})\r\n| join kind=leftouter(\r\n    resources\r\n| where type == 'microsoft.hybridcompute/machines/extensions'\r\n| where properties.type in ({Extensions})\r\n| extend\r\n        VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),\r\n        ExtensionName = tostring(properties.type),\r\n\t\tVersion = tostring(properties.instanceView.typeHandlerVersion),\r\n\t\tStatus = tostring (properties.provisioningState)\r\n) on $left.JoinID == $right.VMId\r\n| where OSType in ('windows')\r\n| extend ArcServer = id\r\n| extend VersionNumber = pack(ExtensionName, Version)\r\n| extend ProvisionState = pack(ExtensionName, Status)\r\n| summarize ExtVersions = make_bag(VersionNumber),ExtProvision = make_bag(ProvisionState) by ArcServer, OSType, OSName, ArcServerStatus\r\n| extend MicrosoftMonitoringAgentversion = tostring((parse_json(ExtVersions)).MicrosoftMonitoringAgent), MicrosoftMonitoringAgent = iff(isnotnull((parse_json(ExtProvision)).MicrosoftMonitoringAgent),(parse_json(ExtProvision)).MicrosoftMonitoringAgent,\"<blank>\")\r\n| extend DependencyAgentWindowsversion = tostring((parse_json(ExtVersions)).DependencyAgentWindows), DependencyAgentWindows = iff(isnotnull((parse_json(ExtProvision)).DependencyAgentWindows),(parse_json(ExtProvision)).DependencyAgentWindows,\"<blank>\")\r\n| extend MDEWindowsversion = tostring((parse_json(ExtVersions)).['MDE.Windows']), MDEWindows = iff(isnotnull((parse_json(ExtProvision)).['MDE.Windows']),(parse_json(ExtProvision)).['MDE.Windows'],\"<blank>\")\r\n| extend WindowsAgentAzureSecurityCenterversion = tostring((parse_json(ExtVersions)).['WindowsAgent.AzureSecurityCenter']), WindowsAgentAzureSecurityCenter = iff(isnotnull((parse_json(ExtProvision)).['WindowsAgent.AzureSecurityCenter']),(parse_json(ExtProvision)).['WindowsAgent.AzureSecurityCenter'],\"<blank>\")\r\n| extend OmsAgentForLinuxversion = (parse_json(ExtVersions)).OmsAgentForLinux, OmsAgentForLinux = (parse_json(ExtProvision)).OmsAgentForLinux\r\n| extend DependencyAgentLinuxversion = (parse_json(ExtVersions)).DependencyAgentLinux, DependencyAgentLinux = (parse_json(ExtProvision)).DependencyAgentLinux\r\n| where \"{MonitoringAgentStatus}\"==\"\" or MicrosoftMonitoringAgent == \"{MonitoringAgentStatus:value}\"\r\n| where \"{DependencyAgentStatus}\"==\"\" or DependencyAgentWindows == \"{DependencyAgentStatus:value}\"\r\n| where \"{DefenderForEndpointStatus}\"==\"\" or MDEWindows == \"{DefenderForEndpointStatus:value}\"\r\n| where \"{QualysExtensionStatus}\"==\"\" or WindowsAgentAzureSecurityCenter == \"{QualysExtensionStatus:value}\"\r\n| count\r\n| extend Metric=\"Total of Servers filtered.\"",
+              "size": 3,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "showBorder": false,
+                "titleContent": {
+                  "columnMatch": "Metric",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "Count",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                }
+              }
+            },
+            "customWidth": "25",
+            "name": "query - 9"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| extend\r\n    JoinID = toupper(id),\r\n\tOSName = tostring(properties.osProfile.computerName),\r\n    OSType = tostring(properties.osName),\r\n    ArcServerStatus = tostring(properties.status)\r\n| where ArcServerStatus in ({ArcServerStatus})\r\n| join kind=leftouter(\r\n    resources\r\n| where type == 'microsoft.hybridcompute/machines/extensions'\r\n| where properties.type in ({Extensions})\r\n| extend\r\n        VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),\r\n        ExtensionName = tostring(properties.type),\r\n\t\tVersion = tostring(properties.instanceView.typeHandlerVersion),\r\n\t\tStatus = tostring (properties.provisioningState)\r\n) on $left.JoinID == $right.VMId\r\n| where OSType in ('windows')\r\n| extend ArcServer = id\r\n| extend VersionNumber = pack(ExtensionName, Version)\r\n| extend ProvisionState = pack(ExtensionName, Status)\r\n| summarize ExtVersions = make_bag(VersionNumber),ExtProvision = make_bag(ProvisionState) by ArcServer, OSType, OSName, ArcServerStatus\r\n| extend MicrosoftMonitoringAgentversion = tostring((parse_json(ExtVersions)).MicrosoftMonitoringAgent), MicrosoftMonitoringAgent = iff(isnotnull((parse_json(ExtProvision)).MicrosoftMonitoringAgent),(parse_json(ExtProvision)).MicrosoftMonitoringAgent,\"<blank>\")\r\n| extend AzureMonitorWindowsAgentversion = tostring((parse_json(ExtVersions)).AzureMonitorWindowsAgent), AzureMonitorWindowsAgent = iff(isnotnull((parse_json(ExtProvision)).AzureMonitorWindowsAgent),(parse_json(ExtProvision)).AzureMonitorWindowsAgent,\"<blank>\")\r\n| extend DependencyAgentWindowsversion = tostring((parse_json(ExtVersions)).DependencyAgentWindows), DependencyAgentWindows = iff(isnotnull((parse_json(ExtProvision)).DependencyAgentWindows),(parse_json(ExtProvision)).DependencyAgentWindows,\"<blank>\")\r\n| extend MDEWindowsversion = tostring((parse_json(ExtVersions)).['MDE.Windows']), MDEWindows = iff(isnotnull((parse_json(ExtProvision)).['MDE.Windows']),(parse_json(ExtProvision)).['MDE.Windows'],\"<blank>\")\r\n| extend WindowsAgentAzureSecurityCenterversion = tostring((parse_json(ExtVersions)).['WindowsAgent.AzureSecurityCenter']), WindowsAgentAzureSecurityCenter = iff(isnotnull((parse_json(ExtProvision)).['WindowsAgent.AzureSecurityCenter']),(parse_json(ExtProvision)).['WindowsAgent.AzureSecurityCenter'],\"<blank>\")\r\n| where \"{MonitoringAgentStatus}\"==\"\" or MicrosoftMonitoringAgent == \"{MonitoringAgentStatus:value}\"\r\n| where \"{DependencyAgentStatus}\"==\"\" or DependencyAgentWindows == \"{DependencyAgentStatus:value}\"\r\n| where \"{DefenderForEndpointStatus}\"==\"\" or MDEWindows == \"{DefenderForEndpointStatus:value}\"\r\n| where \"{QualysExtensionStatus}\"==\"\" or WindowsAgentAzureSecurityCenter == \"{QualysExtensionStatus:value}\"\r\n| project ArcServer, ArcServerStatus, OSType,\r\nMicrosoftMonitoringAgent,MicrosoftMonitoringAgentversion,\r\nAzureMonitorWindowsAgent,AzureMonitorWindowsAgentversion,\r\nDependencyAgentWindows,DependencyAgentWindowsversion,\r\nWindowsAgentAzureSecurityCenter,WindowsAgentAzureSecurityCenterversion,\r\nMDEWindows,MDEWindowsversion //OmsAgentForLinux,OmsAgentForLinuxversion,DependencyAgentLinux,DependencyAgentLinuxversion\r\n| sort by MicrosoftMonitoringAgentversion",
+              "size": 2,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "MicrosoftMonitoringAgent",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "<blank>",
+                          "text": ""
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"MicrosoftMonitoringAgentversion\"] ({0})"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"MicrosoftMonitoringAgentversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "MicrosoftMonitoringAgentversion",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "AzureMonitorWindowsAgent",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "<blank>",
+                          "text": ""
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"AzureMonitorWindowsAgentversion\"] ({0})"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"AzureMonitorWindowsAgentversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "AzureMonitorWindowsAgentversion",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "DependencyAgentWindows",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "<blank>",
+                          "text": ""
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"DependencyAgentWindowsversion\"] ({0})"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"DependencyAgentWindowsversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "DependencyAgentWindowsversion",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "WindowsAgentAzureSecurityCenter",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "<blank>",
+                          "text": ""
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"WindowsAgentAzureSecurityCenterversion\"]({0})"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"WindowsAgentAzureSecurityCenterversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "WindowsAgentAzureSecurityCenterversion",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "MDEWindows",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "<blank>",
+                          "text": ""
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"MDEWindowsversion\"] ({0})"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"MDEWindowsversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "MDEWindowsversion",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "OmsAgentForLinux",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "is Empty",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"OmsAgentForLinuxversion\"] ({0})"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"OmsAgentForLinuxversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "OmsAgentForLinuxversion",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "DependencyAgentLinux",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "is Empty",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "!=",
+                          "thresholdValue": "Succeeded",
+                          "representation": "3",
+                          "text": "[\"DependencyAgentLinuxversion\"] ({0})"
+                        },
+                        {
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "[\"DependencyAgentLinuxversion\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "DependencyAgentLinuxversion",
+                    "formatter": 5
+                  }
+                ],
+                "rowLimit": 2000,
+                "filter": true,
+                "sortBy": [
+                  {
+                    "itemKey": "ArcServerStatus",
+                    "sortOrder": 2
+                  }
+                ]
+              },
+              "sortBy": [
+                {
+                  "itemKey": "ArcServerStatus",
+                  "sortOrder": 2
+                }
+              ]
+            },
+            "name": "query - 5"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "2"
+      },
+      "name": "Arc Extensions Windows"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "# Azure Arc Servers \r\n"
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "1"
+      },
+      "name": "text - 0"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "crossComponentResources": [
+          "{Subscription}"
+        ],
+        "parameters": [
+          {
+            "id": "5ccbaa77-2a42-4a07-a877-b5a3a6297703",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscription",
+            "type": 6,
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "includeAll": true,
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": [
+              "value::all"
+            ]
+          },
+          {
+            "id": "43934901-a569-47a2-ab4e-116d2293204c",
+            "version": "KqlParameterItem/1.0",
+            "name": "ResourceGroup",
+            "label": "Resource Group",
+            "type": 2,
+            "isRequired": true,
+            "isGlobal": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "Resources\r\n| summarize Count = count() by subscriptionId, resourceGroup\r\n| order by Count desc\r\n| extend Rank = row_number()\r\n| project label = resourceGroup",
+            "crossComponentResources": [
+              "{Subscription}"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "defaultValue": "value::all",
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "be1fc731-e17a-494f-9def-02653bf5a36a",
+            "version": "KqlParameterItem/1.0",
+            "name": "Versions",
+            "label": "Agent Versions:",
+            "type": 9,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| project agentversion = tostring(properties.agentVersion)\r\n| distinct agentversion\r\n| project version = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n\r\n",
+            "crossComponentResources": [
+              "{Subscription}"
+            ],
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources",
+            "value": [
+              "",
+              "1.10",
+              "1.11",
+              "1.12",
+              "1.13",
+              "1.14",
+              "1.15",
+              "1.16",
+              "1.17",
+              "1.18",
+              "1.5",
+              "1.7",
+              "1.8",
+              "1.9"
+            ]
+          },
+          {
+            "id": "a53ab73a-b065-42b5-be66-533fce7e983e",
+            "version": "KqlParameterItem/1.0",
+            "name": "VersionsWorkspace",
+            "type": 5,
+            "query": "where type =~ 'microsoft.operationalinsights/workspaces'\r\n| project id",
+            "crossComponentResources": [
+              "value::all"
+            ],
+            "value": null,
+            "typeSettings": {
+              "additionalResourceOptions": []
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "4b0fd3d8-de3e-41b8-88d9-7e704404ad6b",
+            "version": "KqlParameterItem/1.0",
+            "name": "ServerName",
+            "label": "Server Name Filter",
+            "type": 1,
+            "value": ""
+          },
+          {
+            "id": "1753f1ca-6e2d-425c-96e5-d84077039ad6",
+            "version": "KqlParameterItem/1.0",
+            "name": "OperatingSystem",
+            "type": 2,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend OperatingSystem = properties.osSku\r\n| summarize count() by tostring(OperatingSystem)\r\n| project OperatingSystem\r\n| order by OperatingSystem",
+            "crossComponentResources": [
+              "{Subscription}"
+            ],
+            "value": [
+              "value::all"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "selectAllValue": "",
+              "showDefault": false
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "8ec94882-0118-44fb-84b8-e0986d537af4",
+            "version": "KqlParameterItem/1.0",
+            "name": "LatestAgentVersion",
+            "type": 1,
+            "isGlobal": true,
+            "query": "AzureARCAgentLatestVersion_CL\r\n| summarize arg_max(TimeGenerated, *)\r\n| project AgentLatestVersion_s\r\n",
+            "crossComponentResources": [
+              "{VersionsWorkspace}"
+            ],
+            "isHiddenWhenLocked": true,
+            "queryType": 0,
+            "resourceType": "microsoft.operationalinsights/workspaces"
+          }
+        ],
+        "style": "pills",
+        "queryType": 1,
+        "resourceType": "microsoft.resourcegraph/resources"
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "1"
+      },
+      "name": "parameters - 7"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let Monthtoname=(a:int){\r\ncase(a==1,\"January\",\r\n     a==2,\"February\",\r\n     a==3,\"March\",\r\n     a==4,\"April\",\r\n     a==5,\"May\",\r\n     a==6,\"June\",\r\n     a==7,\"July\",\r\n     a==8,\"August\",\r\n     a==9,\"September\",\r\n     a==10,\"October\",\r\n     a==11,\"November\",\r\n     a==12,\"December\",\r\n     \"Error\"\r\n)\r\n};\r\nAzureARCAgentLatestVersion_CL\r\n| summarize arg_max(TimeGenerated, *)\r\n| project extracted=parse_json(AgentLatestVersionHistory_s)\r\n| mv-expand extracted\r\n| project RawData=split(extracted,\": \")\r\n| extend tostring(YearMonth=RawData[0])\r\n| extend tostring(Version=RawData[1])\r\n| serialize N = row_number()\r\n| extend VersionsUrl = \"https://docs.microsoft.com/en-us/azure/azure-arc/servers/agent-release-notes?WT.mc_id=Portal-fx\"\r\n| extend YearMonthToday = strcat (Monthtoname(datetime_part(\"Month\",now())), \" \", datetime_part(\"Year\",now()))\r\n| project N,YearMonth, Version,VersionsUrl,[\"_\"] = iff( YearMonth == YearMonthToday, \"New Version\",\"\")\r\n\r\n",
+        "size": 3,
+        "title": "Agent Version history:",
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "showRefreshButton": true,
+        "exportFieldName": "Version",
+        "exportParameterName": "Version",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{VersionsWorkspace}"
+        ],
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "VersionsUrl",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "_",
+              "formatter": 18,
+              "formatOptions": {
+                "linkColumn": "VersionsUrl",
+                "linkTarget": "Url",
+                "thresholdsOptions": "icons",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "thresholdValue": "New Version",
+                    "representation": "1",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "Blank",
+                    "text": "{0}{1}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "sortBy": [],
+        "tileSettings": {
+          "titleContent": {
+            "columnMatch": "Tittle"
+          },
+          "showBorder": false
+        }
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "1"
+      },
+      "customWidth": "35",
+      "name": "query - 7"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "**Azure Connected Agent Release notes**: https://docs.microsoft.com/en-us/azure/azure-arc/servers/agent-release-notes\r\n\r\n**Download latest agent version here**: https://aka.ms/AzureConnectedMachineAgent"
+            },
+            "customWidth": "100",
+            "name": "Header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "Resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend type = case(\r\ntype contains 'microsoft.hybridcompute/machines', 'Azure Arc enabled servers ',\r\nstrcat(\"Not Translated: \", type))\r\n| extend OperatingSystem = properties.osSku\r\n| where OperatingSystem in ({OperatingSystem})\r\n| extend agentversion = properties.agentVersion, OperatingSystem = properties.osSku, Status = properties.status, lastStatusChange = properties.lastStatusChange\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where agentversionshort in ({Versions})\r\n| summarize count() by type",
+              "size": 3,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "value::all"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "type",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "count_",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "25",
+            "name": "query - 3"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AzureArcServicePrincipalInfo_CL\r\n| summarize arg_max(TimeGenerated, *)\r\n| project ServicePrincipalName=ServicePrincipalName_s,SecretCreationDate=SecretCreationDate_t,SecretExpirationDate=SecretExpirationDate_t,DaysRemaining = datetime_diff('day',SecretExpirationDate_t,now()),AppId = AppId_g",
+              "size": 3,
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{VersionsWorkspace}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "ServicePrincipalName",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "OpenBlade",
+                      "bladeOpenContext": {
+                        "bladeName": "ApplicationMenuBlade",
+                        "extensionName": "Microsoft_AAD_RegisteredApps",
+                        "bladeParameters": [
+                          {
+                            "name": "appId",
+                            "source": "column",
+                            "value": "AppId"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "SecretCreationDate",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "24.8571ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "SecretExpirationDate",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "24.8571ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "DaysRemaining",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "<",
+                          "thresholdValue": "7",
+                          "representation": "3",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "<",
+                          "thresholdValue": "30",
+                          "representation": "2",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        }
+                      ],
+                      "customColumnWidthSetting": "21.5ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "AppId",
+                    "formatter": 5
+                  }
+                ]
+              }
+            },
+            "customWidth": "75",
+            "name": "query - 3"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "1"
+      },
+      "customWidth": "65",
+      "name": "group - 8"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend agentversion = properties.agentVersion, OperatingSystem = properties.osSku, Status = properties.status, lastStatusChange = properties.lastStatusChange\r\n| where OperatingSystem in ({OperatingSystem})\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where agentversionshort in ({Versions})\r\n| summarize count() by tostring(OperatingSystem)\r\n| sort by OperatingSystem",
+              "size": 3,
+              "title": "Distribution of Serves by Operating System",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "piechart",
+              "tileSettings": {
+                "showBorder": false,
+                "titleContent": {
+                  "columnMatch": "agentversion",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "count_",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                }
+              },
+              "chartSettings": {
+                "showLegend": true
+              }
+            },
+            "customWidth": "33",
+            "name": "query - 2 - Copy"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend agentversion = properties.agentVersion, OperatingSystem = properties.osSku, Status = properties.status, lastStatusChange = properties.lastStatusChange\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where OperatingSystem in ({OperatingSystem})\r\n| where agentversionshort in ({Versions})\r\n| summarize count() by tostring(agentversion)\r\n| sort by agentversion",
+              "size": 3,
+              "title": "Distribution of Serves by Agent Version",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "piechart",
+              "tileSettings": {
+                "showBorder": false,
+                "titleContent": {
+                  "columnMatch": "agentversion",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "count_",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                }
+              },
+              "chartSettings": {
+                "showLegend": true
+              }
+            },
+            "customWidth": "33",
+            "name": "query - 2"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend Status =  tostring(properties['status'])\r\n| extend agentversion = properties.agentVersion\r\n| extend OperatingSystem = properties.osSku\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where OperatingSystem in ({OperatingSystem})\r\n| where agentversionshort in ({Versions})\r\n| summarize count() by Status",
+              "size": 3,
+              "title": "Status of 'Connected Machine' agent ",
+              "exportFieldName": "Status",
+              "exportParameterName": "Status",
+              "exportDefaultValue": "",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Connected",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "",
+                    "label": "Unkown",
+                    "color": "gray"
+                  },
+                  {
+                    "seriesName": "Disconnected",
+                    "color": "redBright"
+                  }
+                ]
+              }
+            },
+            "customWidth": "33",
+            "name": "query - 4"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend agentversion = properties.agentVersion, OperatingSystem = properties.osSku, Status = properties.status, lastStatusChange = properties.lastStatusChange\r\n| where OperatingSystem in ({OperatingSystem})\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where agentversionshort in ({Versions})\r\n| extend LatestAgentVersion = {LatestAgentVersion}\r\n| extend Updated = iff (agentversionshort == LatestAgentVersion,0,1)\r\n| project lastStatusChange, Resource = id, OperatingSystem, Status, agentversion, Updated , Location = location, Subscription = subscriptionId, ['Resource group'] = strcat('/subscriptions/', subscriptionId, '/resourceGroups/', resourceGroup)\r\n| order by Resource\r\n\r\n\r\n\r\n",
+              "size": 2,
+              "showAnalytics": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "lastStatusChange",
+                    "formatter": 6,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "27ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "Status",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Disconnected",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Expired",
+                          "representation": "cancelled",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Updated",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "1",
+                          "representation": "2",
+                          "text": ""
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": ""
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Location",
+                    "formatter": 17,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "106px"
+                    }
+                  },
+                  {
+                    "columnMatch": "Subscription",
+                    "formatter": 15,
+                    "formatOptions": {
+                      "linkTarget": "Resource",
+                      "showIcon": true
+                    }
+                  },
+                  {
+                    "columnMatch": "NeedsUpdate",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "0",
+                          "representation": "2",
+                          "text": ""
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": ""
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "rowLimit": 2000,
+                "sortBy": [
+                  {
+                    "itemKey": "$gen_link_Resource_1",
+                    "sortOrder": 1
+                  }
+                ]
+              },
+              "sortBy": [
+                {
+                  "itemKey": "$gen_link_Resource_1",
+                  "sortOrder": 1
+                }
+              ]
+            },
+            "name": "query - 1"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "1"
+      },
+      "name": "Global"
+    }
+  ],
+  "fallbackResourceIds": [
+    "azure monitor"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

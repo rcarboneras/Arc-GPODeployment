@@ -1,0 +1,439 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# Azure Arc Servers Onboarding Status"
+      },
+      "name": "text - 5"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "crossComponentResources": [
+          "{Subscription}"
+        ],
+        "parameters": [
+          {
+            "id": "c3f2b2db-a181-432b-9635-fc86a6d25a5c",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscription",
+            "type": 6,
+            "isRequired": true,
+            "value": "/subscriptions/9b262ffa-d4f9-4de0-9eb5-c844a5fead81",
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "includeAll": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          },
+          {
+            "id": "1ead7c27-950d-4b8c-be64-68973b1ef162",
+            "version": "KqlParameterItem/1.0",
+            "name": "Workspaces",
+            "type": 5,
+            "isRequired": true,
+            "query": "where type =~ 'microsoft.operationalinsights/workspaces'\r\n| project id",
+            "crossComponentResources": [
+              "{Subscription}"
+            ],
+            "value": "/subscriptions/9b262ffa-d4f9-4de0-9eb5-c844a5fead81/resourceGroups/WAC/providers/Microsoft.OperationalInsights/workspaces/WACLATest",
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "8faab232-b967-4ccf-bdd0-f04767c015d6",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRage",
+            "label": "Time Range",
+            "type": 4,
+            "value": {
+              "durationMs": 86400000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ]
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          },
+          {
+            "id": "d95f8a4b-aa8f-441c-87da-c383dac98d2b",
+            "version": "KqlParameterItem/1.0",
+            "name": "ServerName",
+            "label": "Server Name Filter",
+            "type": 1,
+            "value": ""
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.resourcegraph/resources"
+      },
+      "name": "parameters - 2"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "ArcOnboardingStatus_CL\r\n| where Computer like \"{ServerName}\"\r\n| summarize arg_max(TimeGenerated, *) by Computer\r\n| extend ArcCompatible = tostring (ArcCompatible_b)\r\n| summarize count() by ArcCompatible\r\n| sort by ArcCompatible",
+        "size": 3,
+        "title": "Distribution of Machines that pass Arc requirements",
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "timeContextFromParameter": "TimeRage",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspaces}"
+        ],
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "True",
+              "color": "green"
+            },
+            {
+              "seriesName": "False",
+              "color": "redBright"
+            }
+          ]
+        }
+      },
+      "customWidth": "25",
+      "name": "query - 1"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "ArcOnboardingStatus_CL\r\n| where Computer like \"{ServerName}\"\r\n| summarize arg_max(TimeGenerated, *) by Computer\r\n| extend ArcCompatible = tostring (ArcCompatible_b)\r\n| extend  AgentStatus = iff(AgentStatus_s == '','NoAgent',AgentStatus_s)\r\n| summarize count() by AgentStatus\r\n| sort by AgentStatus",
+        "size": 3,
+        "title": "Distribution of Machines by Agent Status",
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "timeContextFromParameter": "TimeRage",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspaces}"
+        ],
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "NoAgent",
+              "color": "gray"
+            },
+            {
+              "seriesName": "Disconnected",
+              "color": "redBright"
+            }
+          ]
+        }
+      },
+      "customWidth": "25",
+      "name": "query - 1 - Copy"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "ArcOnboardingStatus_CL\r\n| where Computer like \"{ServerName}\"\r\n| summarize arg_max(TimeGenerated, *) by Computer\r\n| summarize count() by PowershellVersion_s\r\n| sort by PowershellVersion_s",
+        "size": 3,
+        "title": "Distribution of Machines by PowerShell Version",
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "timeContextFromParameter": "TimeRage",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspaces}"
+        ],
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "NoAgent",
+              "color": "gray"
+            },
+            {
+              "seriesName": "Disconnected",
+              "color": "redBright"
+            }
+          ]
+        }
+      },
+      "customWidth": "25",
+      "name": "query - 1 - Copy - Copy"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "ArcOnboardingStatus_CL\r\n| where Computer like \"{ServerName}\"\r\n| summarize arg_max(TimeGenerated, *) by Computer\r\n| summarize count() by FrameworkVersion_s\r\n| sort by FrameworkVersion_s",
+        "size": 3,
+        "title": "Distribution of Machines by Framework Version",
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "timeContextFromParameter": "TimeRage",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspaces}"
+        ],
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "NoAgent",
+              "color": "gray"
+            },
+            {
+              "seriesName": "Disconnected",
+              "color": "redBright"
+            }
+          ]
+        }
+      },
+      "customWidth": "25",
+      "name": "query - 1 - Copy - Copy - Copy"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "ArcOnboardingStatus_CL\r\n| where Computer like \"{ServerName}\"\r\n| summarize arg_max(TimeGenerated, *) by Computer\r\n| extend  AgentStatus = iff(AgentStatus_s == '','NoAgent',AgentStatus_s)\r\n| extend ArcCompatible = iff(ArcCompatible_b == 1,\"True\",\"False\"), PowershellVersion =PowershellVersion_s, FrameworkVersion = FrameworkVersion_s, httpsProxy = iff(httpsProxy_s == \"\", \"Direct\", httpsProxy_s), AgentLastHeartbeat = AgentLastHeartbeat_s\r\n| extend AgentCodesUrl = \"https://docs.microsoft.com/en-us/azure/azure-arc/servers/troubleshoot-agent-onboard#agent-error-codes\"\r\n| project  TimeGenerated,Computer,OSVersion_s,ArcCompatible,PowershellVersion,FrameworkVersion,httpsProxy,AgentStatus,AgentErrorCode = AgentErrorCode_s, AgentErrorDetails_s,AgentErrorTimestamp=iff(AgentErrorTimestamp_t == '0001-01-01T00:00:00Z',datetime(null),AgentErrorTimestamp_t),AgentCodesUrl",
+        "size": 2,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "timeContextFromParameter": "TimeRage",
+        "showExportToExcel": true,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspaces}"
+        ],
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "TimeGenerated",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "23.7139ch"
+              }
+            },
+            {
+              "columnMatch": "OSVersion_s",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "46.5714ch"
+              }
+            },
+            {
+              "columnMatch": "ArcCompatible",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "icons",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "thresholdValue": "True",
+                    "representation": "success",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "4",
+                    "text": "{0}{1}"
+                  }
+                ],
+                "customColumnWidthSetting": "21.5ch"
+              }
+            },
+            {
+              "columnMatch": "PowershellVersion",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "icons",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "thresholdValue": "5.1",
+                    "representation": "success",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "2",
+                    "text": "{0}{1}"
+                  }
+                ]
+              }
+            },
+            {
+              "columnMatch": "FrameworkVersion",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "icons",
+                "thresholdsGrid": [
+                  {
+                    "operator": "regex",
+                    "thresholdValue": "^5\\.\\d",
+                    "representation": "success",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "regex",
+                    "thresholdValue": "^4\\.9",
+                    "representation": "success",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "regex",
+                    "thresholdValue": "^4\\.8",
+                    "representation": "success",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "regex",
+                    "thresholdValue": "^4\\.7",
+                    "representation": "success",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "regex",
+                    "thresholdValue": "^4\\.6",
+                    "representation": "success",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "2",
+                    "text": "{0}{1}"
+                  }
+                ]
+              }
+            },
+            {
+              "columnMatch": "AgentStatus",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "icons",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "thresholdValue": "NoAgent",
+                    "representation": "cancelled"
+                  },
+                  {
+                    "operator": "==",
+                    "thresholdValue": "Disconnected",
+                    "representation": "Disconnect",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "success",
+                    "text": "{0}{1}"
+                  }
+                ]
+              }
+            },
+            {
+              "columnMatch": "AgentErrorCode",
+              "formatter": 13,
+              "formatOptions": {
+                "linkColumn": "AgentCodesUrl",
+                "linkTarget": "Url",
+                "showIcon": false
+              }
+            },
+            {
+              "columnMatch": "AgentCodesUrl",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "ArcCompatible_b",
+              "formatter": 11
+            }
+          ],
+          "rowLimit": 1000
+        },
+        "sortBy": []
+      },
+      "name": "query - 0"
+    }
+  ],
+  "fallbackResourceIds": [
+    "azure monitor"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
