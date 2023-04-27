@@ -1,0 +1,283 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appNamePrefix": {
+            "type": "string",
+            "defaultValue": "ArcOnboard",
+            "metadata": {
+                "description": "Prefix for the Azure Function App Name (max. 11 characters)"
+            }
+        },
+        "storageAccountNamePrefix": {
+            "type": "string",
+            "metadata": {
+                "description": "Prefix for the storage account used for the Function (max. 11 characters)"
+            },
+            "defaultValue": "arconboard"
+        },
+        "keyvaultName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the keyvault where secrets will be stored"
+            },
+            "defaultValue": "KV-ArcOnboard"
+        },
+        "WorkspaceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Log Analytics Id from Workspace used for Azure Arc Onboarding. Will be stored as a secret in the Key Vault"
+            },
+            "defaultValue": "<Insert Workspace Id HERE>"
+        },
+        "WorkspaceKey": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Log Analytics key from Workspace used for Azure Arc Onboarding. Will be stored as a secret in the Key Vault"
+            },
+            "defaultValue": "<Insert Workspace Key HERE>"
+        },
+        "ServicePrincipalAppId": {
+            "type": "string",
+            "metadata": {
+                "description": "Application Id of the Service Principal used for Arc onboarding"
+            },
+            "defaultValue": "<Insert Service Principal Application id HERE>"
+        }
+    },
+    "variables": {
+        "functionname": "ArcAgentGetLatestVersion",
+        "identityname": "MSI-AzureArcFuntionApp",
+        "appinsightsname": "[concat(parameters('appNamePrefix'), uniqueString(resourceGroup().id))]",
+        "appname": "[concat(parameters('appNamePrefix'), uniqueString(resourceGroup().id))]",
+        "hostingPlanName": "[concat('ASP-',variables('appname'))]",
+        "storageAccountName": "[toLower(concat(parameters('storageAccountNamePrefix'), uniqueString(resourceGroup().id)))]",
+        "WSIdKeyvaultSecretName": "AzureArcLAWorkspaceId",
+        "WSKeyKeyvaultSecretName": "AzureArcLAWorkspaceKey"
+
+    },
+    "resources": [
+        {
+            "apiVersion": "2019-06-01",
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "location": "[resourcegroup().location]",
+            "tags": {},
+            "kind": "StorageV2",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "properties": {
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2"
+            }
+        },
+        {
+            "apiVersion": "2021-02-01",
+            "name": "[variables('hostingPlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[resourcegroup().location]",
+            "kind": "",
+            "tags": {},
+            "dependsOn": [],
+            "properties": {
+                "name": "[variables('hostingPlanName')]"
+            },
+            "sku": {
+                "Tier": "Dynamic",
+                "Name": "Y1"
+            }
+        },
+        {
+            "apiVersion": "2021-02-01",
+            "name": "[variables('appname')]",
+            "type": "Microsoft.Web/sites",
+            "kind": "functionapp",
+            "location": "[resourcegroup().location]",
+            "tags": {},
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "name": "[variables('appname')]",
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~4"
+                        },
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "powershell"
+                        },
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTSHARE",
+                            "value": "[concat(toLower(variables('appname')), 'b488')]"
+                        },
+                        {
+                            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                            "value2": "[reference(concat('microsoft.insights/components/',variables('appinsightsname')), '2015-05-01').InstrumentationKey]"
+                        },
+                        {
+                            "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                            "value": "[reference(concat('microsoft.insights/components/',variables('appinsightsname')), '2015-05-01').ConnectionString]"
+                        }
+                    ],
+                    "powerShellVersion": "~7"
+                },
+                "serverFarmId": "[concat(variables('hostingPlanName'))]",
+                "clientAffinityEnabled": false
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Web/serverfarms/', variables('hostingPlanName'))]",
+                "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+                "[resourceId('Microsoft.Insights/components', variables('appinsightsname'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/functions",
+            "apiVersion": "2020-06-01",
+            "name": "[format('{0}/{1}', variables('appName'), variables('functionName'))]",
+            "properties": {
+                "config": {
+                    "Isdisabled": false,
+                    "bindings": [
+                        {
+                            "name": "Timer",
+                            "type": "timerTrigger",
+                            "direction": "in",
+                            "schedule": "0 30 9 * * *"
+                        }
+                    ]
+                },
+                "files": {
+                    "run.ps1": "[concat('# Input bindings are passed in via param block.\r\nparam($Timer)\r\n\r\n# Get the current universal time in the default string format.\r\n$currentUTCtime = (Get-Date).ToUniversalTime()\r\n\r\n# The ''IsPastDue'' property is ''true'' when the current function invocation is later than scheduled.\r\nif ($Timer.IsPastDue) {\r\n    Write-Host \"PowerShell timer is running late!\"\r\n}\r\n\r\n# Write an information log with the current time.\r\nWrite-Host \"PowerShell timer trigger function ran! TIME: $currentUTCtime\"\r\n\r\n\r\n#################\r\n# GLOBAL THINGS #\r\n#################\r\n\r\nSet-StrictMode -Version Latest\r\n\r\n#####################################\r\n# LOG ANALYTICS CUSTOM LOG FACILITY #\r\n#####################################\r\n\r\n$CustomerId = Get-AzKeyVaultSecret -VaultName ',  parameters('keyvaultName') ,' -Name ',  variables('WSIdKeyvaultSecretName') ,' -AsPlainText\r\n$SharedKey = Get-AzKeyVaultSecret -VaultName ',  parameters('keyvaultName') ,' -Name ', variables('WSKeyKeyvaultSecretName'),' -AsPlainText\r\n\r\nWrite-Host $CustomerId\r\n\r\nfunction WriteAgenVersionToLogAnalytics {\r\n    param (\r\n\r\n        [Parameter(Mandatory = $true)]\r\n        [string]\r\n        $AgentLatestVersion,\r\n\r\n        [Parameter(Mandatory = $true)]\r\n        [string]\r\n        $AgentLatestVersionDate,\r\n\r\n        [Parameter(Mandatory = $true)]\r\n        [array]\r\n        $AgentLatestVersionHistory\r\n                \r\n    )\r\n\r\n    # prepare body\r\n\r\n    $Body = [pscustomobject]@{\r\n        AgentLatestVersion = $AgentLatestVersion\r\n        AgentLatestVersionDate = $AgentLatestVersionDate\r\n        AgentLatestVersionHistory = $AgentLatestVersionHistory\r\n    } | ConvertTo-Json\r\n\r\n    # string to sign\r\n\r\n    $rfc1123date = [DateTime]::UtcNow.ToString(\"r\")\r\n\r\n    $StringToSign = \"POST\" + \"`n\" + $Body.Length + \"`n\" + \"application/json\" + \"`n\" + \"x-ms-date:\" + $rfc1123date + \"`n\" + \"/api/logs\"\r\n    $BytesToHash = [Text.Encoding]::UTF8.GetBytes($StringToSign)\r\n    $KeyBytes = [Convert]::FromBase64String($SharedKey)\r\n    $HMACSHA256 = New-Object System.Security.Cryptography.HMACSHA256\r\n    $HMACSHA256.Key = $KeyBytes\r\n    $CalculatedHash = $HMACSHA256.ComputeHash($BytesToHash)\r\n    $EncodedHash = [Convert]::ToBase64String($CalculatedHash)\r\n    $Authorization = ''SharedKey {0}:{1}'' -f $CustomerId, $EncodedHash\r\n\r\n    # call the REST API\r\n\r\n    $Uri = \"https://\" + $CustomerId + \".ods.opinsights.azure.com\" + \"/api/logs\" + \"?api-version=2016-04-01\"\r\n    $Headers = @{\r\n        \"Authorization\"        = $Authorization;\r\n        \"Log-Type\"             = $LogType;\r\n        \"x-ms-date\"            = $rfc1123date;\r\n        \"time-generated-field\" = $(Get-Date); # Optional field to specify the timestamp from the data. If not specified, Azure Monitor assumes the time is the message ingestion time\r\n    }\r\n\r\n    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12    # ensure Tls12 is used (on older systems)\r\n    try {\r\n        $Response = Invoke-WebRequest -Uri $Uri -Method Post -ContentType \"application/json\" -Headers $Headers -Body $Body -UseBasicParsing\r\n    }\r\n    catch {\r\n        write-host \"Send to LogAnalytics failed: $_\"\r\n    }\r\n}\r\n\r\nfunction WriteServicePrincipalToLogAnalytics {\r\n    param (\r\n\r\n        [Parameter(Mandatory = $true)]\r\n        $spdata\r\n                \r\n    )\r\n\r\n    # prepare body\r\n\r\n    $Body = $spdata | ConvertTo-Json\r\n\r\n    # string to sign\r\n\r\n    $rfc1123date = [DateTime]::UtcNow.ToString(\"r\")\r\n\r\n    $StringToSign = \"POST\" + \"`n\" + $Body.Length + \"`n\" + \"application/json\" + \"`n\" + \"x-ms-date:\" + $rfc1123date + \"`n\" + \"/api/logs\"\r\n    $BytesToHash = [Text.Encoding]::UTF8.GetBytes($StringToSign)\r\n    $KeyBytes = [Convert]::FromBase64String($SharedKey)\r\n    $HMACSHA256 = New-Object System.Security.Cryptography.HMACSHA256\r\n    $HMACSHA256.Key = $KeyBytes\r\n    $CalculatedHash = $HMACSHA256.ComputeHash($BytesToHash)\r\n    $EncodedHash = [Convert]::ToBase64String($CalculatedHash)\r\n    $Authorization = ''SharedKey {0}:{1}'' -f $CustomerId, $EncodedHash\r\n\r\n    # call the REST API\r\n\r\n    $Uri = \"https://\" + $CustomerId + \".ods.opinsights.azure.com\" + \"/api/logs\" + \"?api-version=2016-04-01\"\r\n    $Headers = @{\r\n        \"Authorization\"        = $Authorization;\r\n        \"Log-Type\"             = $LogType;\r\n        \"x-ms-date\"            = $rfc1123date;\r\n        \"time-generated-field\" = $(Get-Date); # Optional field to specify the timestamp from the data. If not specified, Azure Monitor assumes the time is the message ingestion time\r\n    }\r\n\r\n    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12    # ensure Tls12 is used (on older systems)\r\n    try {\r\n        $Response = Invoke-WebRequest -Uri $Uri -Method Post -ContentType \"application/json\" -Headers $Headers -Body $Body -UseBasicParsing\r\n    }\r\n    catch {\r\n        write-host \"Send to LogAnalytics failed: $_\"\r\n    }\r\n}\r\n########\r\n# MAIN #\r\n########\r\n\r\n##Post Agent Version Information\r\n\r\n$url = \"https://docs.microsoft.com/en-us/azure/azure-arc/servers/agent-release-notes\"\r\n\r\n$response = Invoke-WebRequest $url -UseBasicParsing\r\n\r\n# get latest Agent version and release datetime\r\n\r\n$regex = $response.Content | select-string -Pattern ''<h2\\sid=\"[\\w\\d-]*\">Version (?<Version>\\d{1,3}.\\d{1,3})\\s-\\s(?<Date>\\w*\\s\\d*)'' -AllMatches\r\nif ($null -eq $regex) {\r\n    write-host \"Version pattern not found. Check web page $($url) for changes.\"\r\n    break\r\n}\r\n$AgentLatestVersion = $regex.matches.groups[0].Groups[1].value\r\n$AgentLatestVersionDate = $regex.matches.groups[0].Groups[2].value\r\nwrite-host \"Latest version is $($AgentLatestVersion)\"\r\nwrite-host \"Latest version release date is $($AgentLatestVersionDate)\"\r\n\r\n# get Agent version history\r\n\r\n$AgentLatestVersionHistory = $regex.matches | ForEach-Object { \"$($_.Groups[0].groups[2].value): $($_.Groups[0].groups[1].value)\"}\r\n\r\nwrite-host \"Sending info to Log Analytics\"\r\n$LogType = \"AzureARCAgentLatestVersion\"\r\nWriteAgenVersionToLogAnalytics -AgentLatestVersion $AgentLatestVersion -AgentLatestVersionDate $AgentLatestVersionDate -AgentLatestVersionHistory $AgentLatestVersionHistory\r\n\r\n##Post Service Principal Information\r\n\r\n$app= Get-AzADApplication -Filter \"AppId eq ''',parameters('ServicePrincipalAppId'),'''\"\r\n$appName = $App.DisplayName\r\n$AppId = $App.AppId\r\n$secret = $App.PasswordCredentials | Sort-Object EndDatetime | Select-Object -First 1\r\n$spdata = [ordered]@{\r\n    ServicePrincipalName = $AppName\r\n    SecretCreationDate = $secret.startdateTime\r\n    SecretExpirationDate = $secret.EndDateTime\r\n    AppId = $AppId\r\n}\r\n\r\nWrite-Host \"Service Princpipal information:\"\r\n$spdata\r\n$LogType = \"AzureArcServicePrincipalInfo\"\r\nWriteServicePrincipalToLogAnalytics -spdata $spdata\r\n\r\nwrite-host \"Sending info to Log Analytics\"\r\nwrite-host \"Done.\"')]"
+                },
+                "language": "powershell"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('appname'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2021-10-01",
+            "name": "[parameters('keyvaultName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "accessPolicies": [
+                    {
+                        "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('appname')), '2022-09-01', 'full').identity.principalId]",
+                        "tenantId": "[subscription().tenantId]",
+                        "permissions": {
+                            "secrets": [
+                                "list",
+                                "get"
+                            ]
+                        }
+                    }
+                ],
+                "tenantId": "[subscription().tenantId]",
+                "sku": {
+                    "name": "Standard",
+                    "family": "A"
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('appname'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[format('{0}/{1}', parameters('keyVaultName'), variables('WSIdKeyvaultSecretName'))]",
+            "apiVersion": "2022-07-01",
+            "properties": {
+                "contentType": "text/plain",
+                "value": "[parameters('WorkspaceId')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyvaultName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[format('{0}/{1}', parameters('keyVaultName'), variables('WSKeyKeyvaultSecretName'))]",
+            "apiVersion": "2022-07-01",
+            "properties": {
+                "contentType": "text/plain",
+                "value": "[parameters('WorkspaceKey')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyvaultName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "apiVersion": "2018-11-30",
+            "name": "[variables('identityname')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/functions', variables('appname'),variables('functionName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2018-09-01-preview",
+            "name": "[guid(concat(variables('identityname'),resourceGroup().id, 'contributor',deployment().name))]",
+            "properties": {
+                "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityname')), '2015-08-31-preview').principalId]",
+                "scope": "[resourceGroup().id]",
+                "principalType": "ServicePrincipal"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityname'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Resources/deploymentScripts",
+            "apiVersion": "2020-10-01",
+            "name": "UpdateFunctionappRequirements",
+            "location": "[resourceGroup().location]",
+            "kind": "AzurePowerShell",
+            "identity": {
+                "type": "userAssigned",
+                "userAssignedIdentities": {
+                    "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityname'))]": { /*ttk bug*/
+                    }
+                }
+            },
+            "properties": {
+                "forceUpdateTag": "test",
+                "azPowerShellVersion": "8.3",
+                "scriptContent": "[concat('Connect-AzAccount -Identity \r\n $appsvWebAppName = \"',variables('appname'),'\"\r\n$resourceGroupName = \"',resourceGroup().name,'\"\r\n\r\n$resource = Invoke-AzResourceAction -ResourceGroupName $resourceGroupName -ResourceType Microsoft.Web/sites/config -ResourceName \"$appsvWebAppName/publishingcredentials\" -Action list -ApiVersion 2018-02-01 -Force\r\n\r\n$username = $resource.Properties.publishingUserName\r\n$password = $resource.Properties.publishingPassword\r\n$base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes((\"{0}:{1}\" -f $username, $password)))\r\n$userAgent = \"powershell/1.0\"\r\n\r\n#Set headers\r\n$headers = @{\r\n    ''Authorization'' = ''Basic '' + $base64AuthInfo\r\n    ''If-Match'' = ''*''\r\n}\r\n\r\n# Put App files\r\n$Urlrequirements = \"https://$appsvWebAppName.scm.azurewebsites.net/api/vfs/site/wwwroot/requirements.psd1\"\r\n\r\n$Requirements = @\"\r\n# This file enables modules to be automatically managed by the Functions service.\r\n# See https://aka.ms/functionsmanageddependency for additional information.\r\n#\r\n@{\r\n    # For latest supported version, go to ''https://www.powershellgallery.com/packages/Az''. \r\n    # To use the Az module in your function app, please uncomment the line below.\r\n        ''Az.KeyVault'' = ''4.9.1''\r\n        ''Az.Accounts'' = ''2.11.2''\r\n        ''Az.Resources'' = ''6.5.2''\r\n}\r\n\"@\r\nInvoke-RestMethod -Uri $Urlrequirements -Headers $headers -UserAgent $userAgent -Method PUT -Body $Requirements -ContentType \"multipart/form-data\"\r\n\r\n\r\n$UrlProfile = \"https://$appsvWebAppName.scm.azurewebsites.net/api/vfs/site/wwwroot/profile.ps1\"\r\n\r\n$profile = @\"\r\n# Azure Functions profile.ps1\r\n#\r\n# This profile.ps1 will get executed every \"cold start\" of your Function App.\r\n# \"cold start\" occurs when:\r\n#\r\n# * A Function App starts up for the very first time\r\n# * A Function App starts up after being de-allocated due to inactivity\r\n#\r\n# You can define helper functions, run commands, or specify environment variables\r\n# NOTE: any variables defined that are not environment variables will get reset after the first execution\r\n\r\n# Authenticate with Azure PowerShell using MSI.\r\n# Remove this if you are not planning on using MSI or Azure PowerShell.\r\nImport-Module Az.Accounts -RequiredVersion 2.11.2\r\nDisable-AzContextAutosave -Scope Process | Out-Null\r\nConnect-AzAccount -Identity\r\n\r\n# Uncomment the next line to enable legacy AzureRm alias in Azure PowerShell.\r\n# Enable-AzureRmAlias\r\n\r\n# You can also define functions or aliases that can be referenced in any of your PowerShell functions.\r\n\"@\r\nInvoke-RestMethod -Uri $UrlProfile -Headers $headers -UserAgent $userAgent -Method PUT -Body $profile -ContentType \"multipart/form-data\"\r\n\r\n')]",
+                "timeout": "PT1H",
+                "cleanupPreference": "OnSuccess",
+                "retentionInterval": "P1D"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/functions',variables('appName'), variables('functionName'))]",
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityname'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2015-05-01",
+            "name": "[variables('appinsightsname')]",
+            "location": "[resourcegroup().location]",
+            "kind": "web",
+            "properties": {
+                "Application_Type": "web",
+                "Request_Source": "rest"
+            }
+        }
+    ]
+}

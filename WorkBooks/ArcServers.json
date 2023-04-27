@@ -1,0 +1,686 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# Azure Arc Servers\r\n"
+      },
+      "name": "text - 0"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "crossComponentResources": [
+          "{Subscription}"
+        ],
+        "parameters": [
+          {
+            "id": "5ccbaa77-2a42-4a07-a877-b5a3a6297703",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscription",
+            "type": 6,
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "includeAll": true,
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": [
+              "value::all"
+            ]
+          },
+          {
+            "id": "43934901-a569-47a2-ab4e-116d2293204c",
+            "version": "KqlParameterItem/1.0",
+            "name": "ResourceGroup",
+            "label": "Resource Group",
+            "type": 2,
+            "isRequired": true,
+            "isGlobal": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "Resources\r\n| summarize Count = count() by subscriptionId, resourceGroup\r\n| order by Count desc\r\n| extend Rank = row_number()\r\n| project label = resourceGroup",
+            "crossComponentResources": [
+              "{Subscription}"
+            ],
+            "value": [
+              "value::all"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "be1fc731-e17a-494f-9def-02653bf5a36a",
+            "version": "KqlParameterItem/1.0",
+            "name": "Versions",
+            "label": "Agent Versions to show:",
+            "type": 9,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| project agentversion = tostring(properties.agentVersion)\r\n| distinct agentversion\r\n| project version = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n\r\n",
+            "crossComponentResources": [
+              "{Subscription}"
+            ],
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "a53ab73a-b065-42b5-be66-533fce7e983e",
+            "version": "KqlParameterItem/1.0",
+            "name": "VersionsWorkspace",
+            "type": 5,
+            "query": "where type =~ 'microsoft.operationalinsights/workspaces'\r\n| project id",
+            "crossComponentResources": [
+              "value::all"
+            ],
+            "value": null,
+            "typeSettings": {
+              "additionalResourceOptions": []
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "4b0fd3d8-de3e-41b8-88d9-7e704404ad6b",
+            "version": "KqlParameterItem/1.0",
+            "name": "ServerName",
+            "label": "Server Name Filter",
+            "type": 1,
+            "value": ""
+          },
+          {
+            "id": "1753f1ca-6e2d-425c-96e5-d84077039ad6",
+            "version": "KqlParameterItem/1.0",
+            "name": "OperatingSystem",
+            "type": 2,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend OperatingSystem = properties.osSku\r\n| summarize count() by tostring(OperatingSystem)\r\n| project OperatingSystem\r\n| order by OperatingSystem",
+            "crossComponentResources": [
+              "{Subscription}"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ]
+            },
+            "defaultValue": "value::all",
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "8ec94882-0118-44fb-84b8-e0986d537af4",
+            "version": "KqlParameterItem/1.0",
+            "name": "HighestVersion",
+            "type": 1,
+            "isGlobal": true,
+            "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where properties.status == \"Connected\"\r\n| project versionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(properties.agentVersion)), versionparsed = parse_version(tostring(properties.agentVersion))\r\n| sort by versionparsed\r\n| limit 1\r\n| project versionshort",
+            "crossComponentResources": [
+              "{Subscription}"
+            ],
+            "isHiddenWhenLocked": true,
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "55732f3e-76c0-4646-bf40-1b0cd028df41",
+            "version": "KqlParameterItem/1.0",
+            "name": "QueryAdvisor",
+            "type": 1,
+            "query": "AdvisorResources\r\n| where type == 'microsoft.advisor/recommendations'\r\n| where properties.category == 'HighAvailability'\r\n| where properties.shortDescription.solution == 'Upgrade to the latest version of the Azure Connected Machine agent'\r\n| limit 1\r\n| extend latestVersion = tostring(properties.extendedProperties.latestVersion)\r\n| project latestVersion",
+            "crossComponentResources": [
+              "{Subscription}"
+            ],
+            "isHiddenWhenLocked": true,
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "9e1583d4-77d1-4586-aa32-54708154bf55",
+            "version": "KqlParameterItem/1.0",
+            "name": "MaxAgentVersionAvailable",
+            "type": 1,
+            "criteriaData": [
+              {
+                "criteriaContext": {
+                  "leftOperand": "QueryAdvisor",
+                  "operator": "is Empty",
+                  "rightValType": "param",
+                  "resultValType": "param",
+                  "resultVal": "HighestVersion"
+                }
+              },
+              {
+                "criteriaContext": {
+                  "operator": "Default",
+                  "resultValType": "param",
+                  "resultVal": "QueryAdvisor"
+                }
+              }
+            ]
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 7"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let Monthtoname=(a:int){\r\ncase(a==1,\"January\",\r\n     a==2,\"February\",\r\n     a==3,\"March\",\r\n     a==4,\"April\",\r\n     a==5,\"May\",\r\n     a==6,\"June\",\r\n     a==7,\"July\",\r\n     a==8,\"August\",\r\n     a==9,\"September\",\r\n     a==10,\"October\",\r\n     a==11,\"November\",\r\n     a==12,\"December\",\r\n     \"Error\"\r\n)\r\n};\r\nAzureARCAgentLatestVersion_CL\r\n| summarize arg_max(TimeGenerated, *)\r\n| project extracted=parse_json(AgentLatestVersionHistory_s)\r\n| mv-expand extracted\r\n| project RawData=split(extracted,\": \")\r\n| extend tostring(YearMonth=RawData[0])\r\n| extend tostring(Version=RawData[1])\r\n| serialize N = row_number()\r\n| extend VersionsUrl = \"https://docs.microsoft.com/en-us/azure/azure-arc/servers/agent-release-notes?WT.mc_id=Portal-fx\"\r\n| extend YearMonthToday = strcat (Monthtoname(datetime_part(\"Month\",now())), \" \", datetime_part(\"Year\",now()))\r\n| project N,YearMonth, Version,VersionsUrl,[\"_\"] = iff( YearMonth == YearMonthToday, \"New Version\",\"\")\r\n\r\n",
+        "size": 3,
+        "title": "Agent Version history:",
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "showRefreshButton": true,
+        "exportFieldName": "Version",
+        "exportParameterName": "Version",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{VersionsWorkspace}"
+        ],
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "VersionsUrl",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "_",
+              "formatter": 18,
+              "formatOptions": {
+                "linkColumn": "VersionsUrl",
+                "linkTarget": "Url",
+                "thresholdsOptions": "icons",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "thresholdValue": "New Version",
+                    "representation": "1",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "Blank",
+                    "text": "{0}{1}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "sortBy": [],
+        "tileSettings": {
+          "titleContent": {
+            "columnMatch": "Tittle"
+          },
+          "showBorder": false
+        }
+      },
+      "customWidth": "35",
+      "name": "query - 7"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "**Azure Connected Agent Release notes**: https://docs.microsoft.com/en-us/azure/azure-arc/servers/agent-release-notes\r\n\r\n**Download latest agent version here**: https://aka.ms/AzureConnectedMachineAgent"
+            },
+            "customWidth": "100",
+            "name": "Header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "Resources\r\n| where type == 'microsoft.hybridcompute/machines'\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend type = case(\r\ntype contains 'microsoft.hybridcompute/machines', 'Azure Arc enabled servers ',\r\nstrcat(\"Not Translated: \", type))\r\n| extend OperatingSystem = properties.osSku\r\n| where OperatingSystem in ({OperatingSystem})\r\n| extend agentversion = properties.agentVersion, OperatingSystem = properties.osSku, Status = properties.status, lastStatusChange = properties.lastStatusChange\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where agentversionshort in ({Versions})\r\n| summarize count() by type",
+              "size": 3,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "value::all"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "type",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "count_",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 0,
+                    "options": {
+                      "style": "decimal",
+                      "maximumFractionDigits": 2,
+                      "maximumSignificantDigits": 3
+                    }
+                  }
+                },
+                "showBorder": true,
+                "size": "auto"
+              }
+            },
+            "customWidth": "25",
+            "name": "query - 3"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AzureArcServicePrincipalInfo_CL\r\n| summarize arg_max(TimeGenerated, *)\r\n| project ServicePrincipalName=ServicePrincipalName_s,SecretCreationDate=SecretCreationDate_t,SecretExpirationDate=SecretExpirationDate_t,DaysRemaining = datetime_diff('day',SecretExpirationDate_t,now()),AppId = AppId_g",
+              "size": 3,
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{VersionsWorkspace}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "ServicePrincipalName",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "OpenBlade",
+                      "bladeOpenContext": {
+                        "bladeName": "ApplicationMenuBlade",
+                        "extensionName": "Microsoft_AAD_RegisteredApps",
+                        "bladeParameters": [
+                          {
+                            "name": "appId",
+                            "source": "column",
+                            "value": "AppId"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "SecretCreationDate",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "24.8571ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "SecretExpirationDate",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "24.8571ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "DaysRemaining",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "<",
+                          "thresholdValue": "7",
+                          "representation": "3",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "<",
+                          "thresholdValue": "30",
+                          "representation": "2",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        }
+                      ],
+                      "customColumnWidthSetting": "21.5ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "AppId",
+                    "formatter": 5
+                  }
+                ]
+              }
+            },
+            "customWidth": "75",
+            "name": "query - 3"
+          }
+        ]
+      },
+      "customWidth": "65",
+      "name": "group - 8"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend agentversion = properties.agentVersion, OperatingSystem = properties.osSku, Status = properties.status, lastStatusChange = properties.lastStatusChange\r\n| where OperatingSystem in ({OperatingSystem})\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where agentversionshort in ({Versions})\r\n| summarize count() by tostring(OperatingSystem)\r\n| sort by OperatingSystem",
+              "size": 3,
+              "title": "Distribution of Serves by Operating System",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "piechart",
+              "tileSettings": {
+                "showBorder": false,
+                "titleContent": {
+                  "columnMatch": "agentversion",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "count_",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                }
+              },
+              "chartSettings": {
+                "showLegend": true,
+                "ySettings": {
+                  "numberFormatSettings": {
+                    "unit": 0,
+                    "options": {
+                      "style": "decimal",
+                      "useGrouping": true
+                    }
+                  }
+                }
+              }
+            },
+            "customWidth": "33",
+            "name": "query - 2 - Copy"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend agentversion = properties.agentVersion, OperatingSystem = properties.osSku, Status = properties.status, lastStatusChange = properties.lastStatusChange\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where OperatingSystem in ({OperatingSystem})\r\n| where agentversionshort in ({Versions})\r\n| summarize count() by tostring(agentversion)\r\n| sort by agentversion",
+              "size": 3,
+              "title": "Distribution of Serves by Agent Version",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "piechart",
+              "tileSettings": {
+                "showBorder": false,
+                "titleContent": {
+                  "columnMatch": "agentversion",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "count_",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                }
+              },
+              "chartSettings": {
+                "showLegend": true,
+                "ySettings": {
+                  "numberFormatSettings": {
+                    "unit": 0,
+                    "options": {
+                      "style": "decimal",
+                      "useGrouping": true
+                    }
+                  }
+                }
+              }
+            },
+            "customWidth": "33",
+            "name": "query - 2"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend Status =  tostring(properties['status'])\r\n| extend agentversion = properties.agentVersion\r\n| extend OperatingSystem = properties.osSku\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where OperatingSystem in ({OperatingSystem})\r\n| where agentversionshort in ({Versions})\r\n| summarize count() by Status",
+              "size": 3,
+              "title": "Status of 'Connected Machine' agent ",
+              "exportFieldName": "Status",
+              "exportParameterName": "Status",
+              "exportDefaultValue": "",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Connected",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "",
+                    "label": "Unkown",
+                    "color": "gray"
+                  },
+                  {
+                    "seriesName": "Disconnected",
+                    "color": "redBright"
+                  }
+                ],
+                "showLegend": true,
+                "ySettings": {
+                  "numberFormatSettings": {
+                    "unit": 0,
+                    "options": {
+                      "style": "decimal",
+                      "useGrouping": true
+                    }
+                  }
+                }
+              }
+            },
+            "customWidth": "33",
+            "name": "query - 4"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend agentversion = properties.agentVersion, OperatingSystem = properties.osSku, Status = properties.status, lastStatusChange = properties.lastStatusChange\r\n| where OperatingSystem in ({OperatingSystem})\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where agentversionshort in ({Versions})\r\n| extend Updated = iff (toreal(agentversionshort) == {MaxAgentVersionAvailable},0,1)\r\n| project lastStatusChange, Resource = id, OperatingSystem, Status, agentversion, Updated , Location = location, Subscription = subscriptionId, ['Resource group'] = strcat('/subscriptions/', subscriptionId, '/resourceGroups/', resourceGroup)\r\n| order by Resource\r\n\r\n\r\n\r\n",
+              "size": 2,
+              "showAnalytics": true,
+              "showExportToExcel": true,
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "lastStatusChange",
+                    "formatter": 6,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "27ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "Status",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Disconnected",
+                          "representation": "4",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Expired",
+                          "representation": "cancelled",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Updated",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "1",
+                          "representation": "2",
+                          "text": ""
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": ""
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Location",
+                    "formatter": 17,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "106px"
+                    }
+                  },
+                  {
+                    "columnMatch": "Subscription",
+                    "formatter": 15,
+                    "formatOptions": {
+                      "linkTarget": "Resource",
+                      "showIcon": true
+                    }
+                  },
+                  {
+                    "columnMatch": "NeedsUpdate",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "0",
+                          "representation": "2",
+                          "text": ""
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "success",
+                          "text": ""
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "rowLimit": 5000,
+                "filter": true,
+                "sortBy": [
+                  {
+                    "itemKey": "$gen_link_Resource_1",
+                    "sortOrder": 1
+                  }
+                ]
+              },
+              "sortBy": [
+                {
+                  "itemKey": "$gen_link_Resource_1",
+                  "sortOrder": 1
+                }
+              ]
+            },
+            "name": "query - 1"
+          }
+        ]
+      },
+      "name": "Global"
+    }
+  ],
+  "fallbackResourceIds": [
+    "azure monitor"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

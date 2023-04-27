@@ -1,0 +1,24 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appNamePrefix": {
+            "value": "ArcOnboard"
+        },
+        "storageAccountNamePrefix": {
+            "value": "arconboard"
+        },
+        "keyvaultName": {
+            "value": "KV-ArcOnboard"
+        },
+        "WorkspaceId": {
+            "value": "<Insert Workspace Id HERE>"
+        },
+        "WorkspaceKey": {
+            "value": "<Insert Workspace Key HERE>"
+        },
+        "ServicePrincipalAppId": {
+            "value": "<Insert Service Principal Application id HERE>"
+        }
+    }
+}
