@@ -1,0 +1,20 @@
+
+$workfolder = "$env:SystemDrive\temp"
+$logpath = "$workfolder\AzureArcOnboarding.log" #Local log file
+
+     - Checks azcmagent.exe version and updates the agent if a new version is found in the network folder
+        - Checks its connection status
+        - In case the server is disconnected it logs the last errors from the azcmagent.exe Agent on the shared folder
+
+
+.PARAMETER ReportServerFQDN
+   FQDN of the Server that will act as report Server (and source files)
+   
+.PARAMETER AgentProxy
+   Url of the proxy in case is used. 
+   e.g. : https://proxy.contoso.com:8080
+
+.PARAMETER AssessOnly
+   Switch parameter that makes script work in Assess mode.
+   No machines will be onboarded in Azure Arc.
+   Machines will only report if their prerequesites are met or not to the report share
