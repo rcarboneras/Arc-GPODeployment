@@ -684,7 +684,6 @@
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/59b301d0-77eb-4a76-aba5-53cb5731c342/resourcegroups/rg-sentinel/providers/microsoft.operationalinsights/workspaces/laws-trsentinel"
   ],
   "fromTemplateId": "sentinel-UserWorkbook",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
