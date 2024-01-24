@@ -97,7 +97,7 @@
             "crossComponentResources": [
               "value::all"
             ],
-            "value": "/subscriptions/df77550b-74e4-4b51-a312-a1116f915de8/resourceGroups/RG-LAWS/providers/Microsoft.OperationalInsights/workspaces/LAWS-PRO-01",
+            "value": null,
             "typeSettings": {
               "additionalResourceOptions": []
             },
