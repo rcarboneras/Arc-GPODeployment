@@ -97,7 +97,7 @@
             "crossComponentResources": [
               "value::all"
             ],
-            "value": null,
+            "value": "/subscriptions/df77550b-74e4-4b51-a312-a1116f915de8/resourceGroups/RG-LAWS/providers/Microsoft.OperationalInsights/workspaces/LAWS-PRO-01",
             "typeSettings": {
               "additionalResourceOptions": []
             },
@@ -553,7 +553,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend agentversion = properties.agentVersion, OperatingSystem = properties.osSku, Status = properties.status, lastStatusChange = properties.lastStatusChange\r\n| where OperatingSystem in ({OperatingSystem})\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where agentversionshort in ({Versions})\r\n| extend Updated = iff (toreal(agentversionshort) == {MaxAgentVersionAvailable},0,1)\r\n| project lastStatusChange, Resource = id, OperatingSystem, Status, agentversion, Updated , Location = location, Subscription = subscriptionId, ['Resource group'] = strcat('/subscriptions/', subscriptionId, '/resourceGroups/', resourceGroup)\r\n| order by Resource\r\n\r\n\r\n\r\n",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend agentversion = properties.agentVersion, OperatingSystem = properties.osSku, Status = properties.status, lastStatusChange = properties.lastStatusChange\r\n| where OperatingSystem in ({OperatingSystem})\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where agentversionshort in ({Versions})\r\n| extend Updated = iff (toreal(agentversionshort) == {MaxAgentVersionAvailable},0,1)\r\n| project lastStatusChange, Subscription = subscriptionId, ['Resource group'] = strcat('/subscriptions/', subscriptionId, '/resourceGroups/', resourceGroup), Resource = id, OperatingSystem, Status, agentversion, Updated , Location = location\r\n| order by Resource\r\n\r\n\r\n\r\n",
               "size": 2,
               "showAnalytics": true,
               "showExportToExcel": true,
@@ -569,6 +569,29 @@
                     "formatter": 6,
                     "formatOptions": {
                       "customColumnWidthSetting": "27ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "Subscription",
+                    "formatter": 15,
+                    "formatOptions": {
+                      "linkTarget": "Resource",
+                      "showIcon": true,
+                      "customColumnWidthSetting": "31.1429ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "Resource group",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "24.5714ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "Resource",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "24.5714ch"
                     }
                   },
                   {
@@ -627,14 +650,6 @@
                     }
                   },
                   {
-                    "columnMatch": "Subscription",
-                    "formatter": 15,
-                    "formatOptions": {
-                      "linkTarget": "Resource",
-                      "showIcon": true
-                    }
-                  },
-                  {
                     "columnMatch": "NeedsUpdate",
                     "formatter": 18,
                     "formatOptions": {
@@ -657,20 +672,9 @@
                   }
                 ],
                 "rowLimit": 5000,
-                "filter": true,
-                "sortBy": [
-                  {
-                    "itemKey": "$gen_link_Resource_1",
-                    "sortOrder": 1
-                  }
-                ]
+                "filter": true
               },
-              "sortBy": [
-                {
-                  "itemKey": "$gen_link_Resource_1",
-                  "sortOrder": 1
-                }
-              ]
+              "sortBy": []
             },
             "name": "query - 1"
           }
@@ -680,7 +684,8 @@
     }
   ],
   "fallbackResourceIds": [
-    "azure monitor"
+    "/subscriptions/59b301d0-77eb-4a76-aba5-53cb5731c342/resourcegroups/rg-sentinel/providers/microsoft.operationalinsights/workspaces/laws-trsentinel"
   ],
+  "fromTemplateId": "sentinel-UserWorkbook",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
 }
