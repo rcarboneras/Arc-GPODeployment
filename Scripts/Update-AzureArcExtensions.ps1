@@ -6,7 +6,7 @@
    The Script select automatically all the Azure Arc machines in the tenant that have a extension with a version lower than 
    the Desired one.
 
-   ONLY machines with Tag  {"EnableExtensionsUpate": "True"} with be updated by default. Skip this filter using SKipTags parameter
+   ONLY extensions in machines with Tag  {"EnableExtensionsUpdate": "True"} will be updated by default. Skip this filter using SKipTags parameter
 .PARAMETER type
     Specifies Extension Type
 .PARAMETER PublisherName
@@ -20,14 +20,17 @@
 .PARAMETER SkipTags
     Removes the Tag filter. Every machine that have the extension version lower than the desired one is affected
 .EXAMPLE
-   This updates machines with tag {"EnableExtensionsUpate": "True"} to version 1.5.66 of WindowsPatchExtension
+   This updates machines with tag {"EnableExtensionsUpdate": "True"} to version 1.5.66 of WindowsPatchExtension
    .\Update-AzureArcExtensions.ps1 -PublisherName Microsoft.CPlat.Core -Type WindowsPatchExtension -DesiredVersion 1.5.66 -Location eastus 
 .EXAMPLE
-   This updates machines to version 1.5.66 of WindowsPatchExtension, regarding its tags
+   This updates machines to version 1.5.66 of WindowsPatchExtension, regardless its tags
    .\Update-AzureArcExtensions.ps1 -PublisherName Microsoft.CPlat.Core -Type WindowsPatchExtension -DesiredVersion 1.5.66 -Location eastus -SkipTags
 .EXAMPLE
-   This previews machines with tag {"EnableExtensionsUpate": "True"} that have version lower than 1.5.66 of WindowsPatchExtension
+   This previews machines with tag {"EnableExtensionsUpdate": "True"} that have version lower than 1.5.66 of WindowsPatchExtension
    .\Update-AzureArcExtensions.ps1 -PublisherName Microsoft.CPlat.Core -Type WindowsPatchExtension -DesiredVersion 1.5.66 -Location eastus -WhatIf
+.EXAMPLE
+   This previews machines that have version lower than  1.1.2353.19 of WindowsAgent.SqlServer
+   .\Update-AzureArcExtensions.ps1 -PublisherName Microsoft.AzureData -Type WindowsAgent.SqlServer -DesiredVersion  1.1.2353.19 -Location westeurope -WhatIf -SkipTags
 
 #>
 
@@ -37,10 +40,11 @@ Param (
     [ValidateSet("AdminCenter", "AzureMonitorLinuxAgent", "AzureMonitorWindowsAgent", "AzureSecurityLinuxAgent", "AzureSecurityWindowsAgent", "ChangeTracking-Linux", "ChangeTracking-Windows", "CustomScript", "CustomScriptExtension", "DependencyAgentLinux", "DependencyAgentWindows", "LinuxAgent.SqlServer", "LinuxOsUpdateExtension", "LinuxPatchExtension", "MDE.Linux", "MDE.Windows", "WindowsAgent.SqlServer", "WindowsOsUpdateExtension", "WindowsPatchExtension")]
     [string]$Type,
     [Parameter(Mandatory)]
-    [ValidateSet("Microsoft.AdminCenter", "Microsoft.Azure.ActiveDirectory", "Microsoft.Azure.Automation.HybridWorker", "Microsoft.Azure.AzureDefenderForServers", "Microsoft.Azure.Extensions", "Microsoft.Azure.Monitor", "Microsoft.Azure.Monitoring.DependencyAgent", "Microsoft.AzureData", "Microsoft.Compute", "Microsoft.CPlat.Core", "Microsoft.EnterpriseCloud.Monitoring", "Microsoft.SoftwareUpdateManagement")]
+    [ValidateSet("Microsoft.AdminCenter", "Microsoft.Azure.ActiveDirectory", "Microsoft.Azure.Automation.HybridWorker", "Microsoft.Azure.AzureDefenderForServers", "Microsoft.Azure.ChangeTrackingAndInventory", "Microsoft.Azure.Extensions", "Microsoft.Azure.Monitor", "Microsoft.Azure.Monitoring.DependencyAgent", "Microsoft.AzureData","Microsoft.Azure.Security.Monitoring","Microsoft.Compute", "Microsoft.CPlat.Core", "Microsoft.EnterpriseCloud.Monitoring", "Microsoft.SoftwareUpdateManagement")]
     [string]$PublisherName,
     [Parameter(Mandatory)]
     $DesiredVersion,
+    [Parameter(Mandatory)]
     $Location = "eastus",
     [switch]$Whatif,
     [switch]$SkipTags 
@@ -91,12 +95,11 @@ is in a Connected state#>
 
 Write-Host "Querying existing resources ... " -ForegroundColor Green
 
-
+# | where properties.provisioningState == "Succeeded"
 $kqlQuery = @"
 resources
 | where type == 'microsoft.hybridcompute/machines/extensions'
 | where properties.type == '$type' and location == '$Location'
-| where properties.provisioningState == "Succeeded"
 | extend typeHandlerVersion = tostring(properties.typeHandlerVersion)
 | where parse_version(typeHandlerVersion) < parse_version('$DesiredVersion')
 | extend machineid = tolower(tostring(split(id,'/extensions/',0)[0]))
@@ -162,8 +165,7 @@ else {
     }
 
     $UpdateOperations
-    #https://management.azure.com/subscriptions/df77550b-74e4-4b51-a312-a1116f915de8/providers/Microsoft.HybridCompute/locations/westeurope/operationstatus/548bcefb-d11b-4d34-af26-e5958168f8f8?api-version=2022-03-10
-
+ 
     Write-Host "CSV file '$csvPath' with ResourceIds of the affected machines was created. Check the update in the Azure Portal" -ForegroundColor Green
 
 }

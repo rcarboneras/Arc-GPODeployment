@@ -11,7 +11,9 @@
     Value of the new Service Principal Secret created in Azure Active Directory
 
 .PARAMETER DomainFQDNs
-    List of Domains, in the FQND from, that need permissions to decrypt the secret. E.g. "domain.local","domain2.local"
+    List of Domains, in FQND from, that need permissions to decrypt the secret. E.g. "domain.local","domain2.local" The max. number of
+    allowed domains is 4
+
  
 .EXAMPLE
    This example generates a new encrypted secret and saves it to the encryptedServicePrincipalSecret file
@@ -23,6 +25,7 @@
 Param (
     [Parameter(Mandatory = $true)]
     [string]$ServicePrincipalSecret,
+    [ValidateCount(1, 4)]
     [string[]]$DomainFQDNs
 )
 

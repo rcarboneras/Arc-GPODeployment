@@ -274,6 +274,7 @@ try {
     }
     else {
         Copy-Item -Path "$FolderRemotepath\AzureConnectedMachineAgent.msi" -Destination $AzureArcDeployPath -ErrorAction Stop
+        Remove-Item -Path "$FolderRemotepath\AzureConnectedMachineAgent.msi" -Force
         Write-Host "Install file `'AzureConnectedMachineAgent.msi`' successfully copied to $AzureArcDeployPath" -ForegroundColor Green
     }
 

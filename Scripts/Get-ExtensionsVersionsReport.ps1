@@ -3,7 +3,7 @@
 # for a given an Azure location
 
 Param (
-    $Location = "eastus"
+    $Location = "westeurope"
 )
 
 #Check the existing versions in your environment
@@ -25,8 +25,7 @@ $CurrentVersions = Search-AzGraph -Query $kqlQuery
 
 # Get latest version available in location, for each of the extension
 $AvailableVersions = foreach ($extension in $CurrentVersions) {
-    Get-AzVMExtensionImage -Location $Location -PublisherName $extension.PublisherName -Type $extension.type | select PublisherName, Type, @{N = "Version"; E = { [version]$_.Version } }
-    | Sort-Object -Property Version | Select-Object -Last 1
+    Get-AzVMExtensionImage -Location $Location -PublisherName $extension.PublisherName -Type $extension.type | select PublisherName, Type, @{N = "Version"; E = { [version]$_.Version } }| Sort-Object -Property Version | Select-Object -Last 1
 }
 
 #Index Current versions

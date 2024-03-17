@@ -1,0 +1,600 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# Guest Configuration Detailed Report"
+      },
+      "name": "text - 8"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "c82f4262-c23f-40a3-af02-bb10d5b9e126",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscriptions",
+            "type": 6,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "includeAll": true,
+              "showDefault": false
+            },
+            "defaultValue": "value::all"
+          },
+          {
+            "id": "e1daed20-b2e9-461a-a2f6-18000aeddfaa",
+            "version": "KqlParameterItem/1.0",
+            "name": "GuestConfigurationwithVersion",
+            "label": "Configuration and Version",
+            "type": 2,
+            "query": "GuestConfigurationResources\r\n| project name = properties.latestAssignmentReport.assignment.configuration.name, version = properties.latestAssignmentReport.assignment.configuration.version\r\n| project output = strcat(name, \": \", '\"', version, '\"')\r\n| distinct output",
+            "crossComponentResources": [
+              "{Subscriptions}"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources",
+            "value": "AzureWindowsBaseline: \"1.*\""
+          },
+          {
+            "id": "f3acd87e-1b22-4daf-ac22-ab491e9ff965",
+            "version": "KqlParameterItem/1.0",
+            "name": "ShowVersionHistory",
+            "type": 2,
+            "isRequired": true,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "defaultItemsText": "false"
+            },
+            "jsonData": " [{ \"value\": \"true\", \"label\": \"true\" }, { \"value\": \"false\", \"label\": \"false\"}]",
+            "value": "false"
+          }
+        ],
+        "style": "pills",
+        "queryType": 0
+      },
+      "name": "parameters - 1"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## Versioning and Changes\r\n| Version | Date       | Changes                                          |\r\n| ------- | ---------- | ------------------------------------------------ |\r\n| 1.0     | 2023-12-04 | - Initial release of the Azure Workbook.         |\r\n\r\n"
+      },
+      "conditionalVisibility": {
+        "parameterName": "ShowVersionHistory",
+        "comparison": "isEqualTo",
+        "value": "true"
+      },
+      "name": "text - 13"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "policyresources\r\n| where type == \"microsoft.authorization/policydefinitions\"\r\n| extend configuration = tostring(properties.metadata.guestConfiguration.name)\r\n| where  configuration == tostring(split('{GuestConfigurationwithVersion}',': ')[0])\r\n| project id,displayname = properties.displayName, configuration, category = properties.metadata.category\r\n",
+        "size": 3,
+        "title": "Azure policy that match the configuration above selected",
+        "queryType": 1,
+        "resourceType": "microsoft.resources/tenants",
+        "crossComponentResources": [
+          "value::tenant"
+        ],
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "id",
+              "formatter": 5,
+              "formatOptions": {
+                "linkTarget": "Resource",
+                "subTarget": "",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "displayname",
+              "formatter": 13,
+              "formatOptions": {
+                "linkColumn": "id",
+                "linkTarget": "Resource",
+                "linkIsContextBlade": true,
+                "showIcon": false,
+                "customColumnWidthSetting": "105.4286ch"
+              }
+            },
+            {
+              "columnMatch": "category",
+              "formatter": 1
+            }
+          ],
+          "rowLimit": 4000,
+          "labelSettings": [
+            {
+              "columnId": "displayname",
+              "label": "Display name"
+            },
+            {
+              "columnId": "configuration",
+              "label": "Configuration name"
+            },
+            {
+              "columnId": "category",
+              "label": "Category"
+            }
+          ]
+        }
+      },
+      "conditionalVisibility": {
+        "parameterName": "GuestConfigurationwithVersion",
+        "comparison": "isNotEqualTo"
+      },
+      "name": "AzurePolicies"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "GuestConfigurationResources\r\n| where properties.latestAssignmentReport.assignment.configuration.name == tostring(split('{GuestConfigurationwithVersion}',': ')[0])\r\n| where properties.latestAssignmentReport.assignment.configuration.version == extract('\"([^\"]*)\"', 1, tostring(split('{GuestConfigurationwithVersion}',': ')[1]))\r\n| extend complianceStatus = tostring(properties.complianceStatus)\r\n| mv-expand resources = parse_json(properties.latestAssignmentReport.resources)\r\n| project id,resources,complianceStatus\r\n| summarize Compliant = countif(complianceStatus == \"Compliant\"),NonCompliant = countif(complianceStatus == \"NonCompliant\"), ResourceCompliant = countif(resources.complianceStatus == \"true\"),ResourceNonCompliant = countif(resources.complianceStatus == \"false\") by id\r\n//| summarize MachinesCompliant = countif(Compliant != 0),MachinesNonCompliant = countif(Compliant == 0), ResCompliant = sum(ResourceCompliant), ResNonCompliant = sum(ResourceNonCompliant)\r\n| extend Compliant = iff(Compliant == 0,\"NonCompliant\",\"Compliant\")\r\n| summarize count() by Compliant\r\n",
+        "size": 4,
+        "title": "Machine Compliance",
+        "queryType": 1,
+        "resourceType": "microsoft.resourcegraph/resources",
+        "crossComponentResources": [
+          "{Subscriptions}"
+        ],
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Compliant",
+              "color": "green"
+            },
+            {
+              "seriesName": "NonCompliant",
+              "color": "redBright"
+            }
+          ]
+        }
+      },
+      "customWidth": "35",
+      "name": "MachinesCompliance - Copy"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "GuestConfigurationResources\r\n| where properties.latestAssignmentReport.assignment.configuration.name == tostring(split('{GuestConfigurationwithVersion}',': ')[0])\r\n| where properties.latestAssignmentReport.assignment.configuration.version == extract('\"([^\"]*)\"', 1, tostring(split('{GuestConfigurationwithVersion}',': ')[1]))\r\n| extend complianceStatus = tostring(properties.complianceStatus)\r\n| mv-expand resources = parse_json(properties.latestAssignmentReport.resources)\r\n| project id,resources,complianceStatus\r\n| summarize count() by SettingsCompliant = iff(tostring(resources.complianceStatus) == \"true\",\"Compliant\",\"NonCompliant\")",
+        "size": 4,
+        "title": "Settings Compliance",
+        "queryType": 1,
+        "resourceType": "microsoft.resourcegraph/resources",
+        "crossComponentResources": [
+          "{Subscriptions}"
+        ],
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Compliant",
+              "color": "green"
+            },
+            {
+              "seriesName": "NonCompliant",
+              "color": "redBright"
+            }
+          ]
+        }
+      },
+      "customWidth": "50",
+      "name": "SettingsCompliance"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "<br />\r\n#### Compliant status by configuration: {GuestConfigurationwithVersion}"
+      },
+      "name": "complianStatus"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "f015385a-5ab5-49f3-a177-f0e197bf8fc9",
+            "version": "KqlParameterItem/1.0",
+            "name": "complianceStatus",
+            "label": "Compliance Status",
+            "type": 10,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n {\"value\": \"Compliant\", \"label\": \"Compliant\"},\r\n {\"value\": \"NonCompliant\", \"label\": \"NonCompliant\"}\r\n]",
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": "NonCompliant"
+          }
+        ],
+        "style": "above",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "complianceStatus"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "GuestConfigurationResources\r\n| where properties.latestAssignmentReport.assignment.configuration.name == tostring(split('{GuestConfigurationwithVersion}',': ')[0])\r\n| where properties.latestAssignmentReport.assignment.configuration.version == extract('\"([^\"]*)\"', 1, tostring(split('{GuestConfigurationwithVersion}',': ')[1]))\r\n| extend complianceStatus = tostring(properties.complianceStatus)\r\n| mv-expand resources = parse_json(properties.latestAssignmentReport.resources)\r\n| project id,resources,complianceStatus\r\n| summarize Compliant = countif(resources.complianceStatus == \"true\"),NonCompliant = countif(resources.complianceStatus == \"false\") by id,complianceStatus\r\n| extend total = pack_array(Compliant, NonCompliant)\r\n| extend sum = (NonCompliant+Compliant)\r\n| extend Configurationname = tostring(split('{GuestConfigurationwithVersion}',': ')[0])\r\n| extend Configurationversion = extract('\"([^\"]*)\"', 1, tostring(split('{GuestConfigurationwithVersion}',': ')[1]))\r\n| project machine = tostring(split(id,'/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/',0).[0]),complianceStatus, Configurationname,Configurationversion,Compliant,NonCompliant, sum, total, Percentage = (todouble(Compliant)/sum)*100, id\r\n| where ('{complianceStatus}' == \"\" or complianceStatus == \"{complianceStatus:value}\")\r\n| order by Percentage desc",
+        "size": 3,
+        "showAnalytics": true,
+        "showExportToExcel": true,
+        "queryType": 1,
+        "resourceType": "microsoft.resourcegraph/resources",
+        "crossComponentResources": [
+          "{Subscriptions}"
+        ],
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "machine",
+              "formatter": 13,
+              "formatOptions": {
+                "linkTarget": "Resource",
+                "linkIsContextBlade": true,
+                "showIcon": true,
+                "customColumnWidthSetting": "28.1429ch"
+              }
+            },
+            {
+              "columnMatch": "complianceStatus",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "icons",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "thresholdValue": "NonCompliant",
+                    "representation": "4",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "success",
+                    "text": "{0}{1}"
+                  }
+                ]
+              }
+            },
+            {
+              "columnMatch": "Compliant",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "NonCompliant",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "sum",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "total",
+              "formatter": 22,
+              "formatOptions": {
+                "compositeBarSettings": {
+                  "labelText": "[\"Compliant\"]/[\"sum\"]",
+                  "columnSettings": [
+                    {
+                      "columnName": "Compliant",
+                      "color": "green"
+                    },
+                    {
+                      "columnName": "NonCompliant",
+                      "color": "red"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "columnMatch": "Percentage",
+              "formatter": 0,
+              "numberFormat": {
+                "unit": 0,
+                "options": {
+                  "style": "decimal",
+                  "maximumFractionDigits": 0
+                }
+              }
+            },
+            {
+              "columnMatch": "id",
+              "formatter": 13,
+              "formatOptions": {
+                "linkTarget": "Resource",
+                "linkIsContextBlade": true,
+                "showIcon": true,
+                "customColumnWidthSetting": "54.8571ch"
+              }
+            }
+          ],
+          "rowLimit": 2000,
+          "filter": true,
+          "labelSettings": [
+            {
+              "columnId": "machine",
+              "label": "Machine"
+            },
+            {
+              "columnId": "complianceStatus",
+              "label": "Status"
+            },
+            {
+              "columnId": "total",
+              "label": "Compliant settings"
+            },
+            {
+              "columnId": "id",
+              "label": "Guest Configuration"
+            }
+          ]
+        },
+        "sortBy": []
+      },
+      "name": "Complian Status chart"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "<br />\r\n#### Select any setting to show compliance level:"
+      },
+      "name": "text - 12"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "GuestConfigurationResources\r\n| where properties.latestAssignmentReport.assignment.configuration.name == tostring(split('{GuestConfigurationwithVersion}',': ')[0])\r\n| where properties.latestAssignmentReport.assignment.configuration.version == extract('\"([^\"]*)\"', 1, tostring(split('{GuestConfigurationwithVersion}',': ')[1]))\r\n| mv-expand data = (parse_json(properties.latestAssignmentReport.resources))\r\n| project name = tostring(properties.latestAssignmentReport.assignment.name),tostring(data.resourceId), data.complianceStatus\r\n| summarize Compliant = countif(data_complianceStatus == \"true\"),NonCompliant = countif(data_complianceStatus == \"false\") by name,data_resourceId\r\n| extend total = pack_array(Compliant, NonCompliant)\r\n| extend sum = (NonCompliant+Compliant)\r\n| project data_resourceId,Compliant,NonCompliant,total,sum,Percentage = (todouble(Compliant)/sum)*100\r\n| order by tostring(data_resourceId) asc \r\n",
+        "size": 3,
+        "showRefreshButton": true,
+        "exportFieldName": "data_resourceId",
+        "exportParameterName": "data_resourceId",
+        "queryType": 1,
+        "resourceType": "microsoft.resourcegraph/resources",
+        "crossComponentResources": [
+          "{Subscriptions}"
+        ],
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Compliant",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "NonCompliant",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "total",
+              "formatter": 22,
+              "formatOptions": {
+                "compositeBarSettings": {
+                  "labelText": "[\"Compliant\"]/[\"sum\"]",
+                  "columnSettings": [
+                    {
+                      "columnName": "Compliant",
+                      "color": "green"
+                    },
+                    {
+                      "columnName": "NonCompliant",
+                      "color": "red"
+                    }
+                  ]
+                },
+                "customColumnWidthSetting": "187px"
+              }
+            },
+            {
+              "columnMatch": "sum",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "Percentage",
+              "formatter": 0,
+              "numberFormat": {
+                "unit": 0,
+                "options": {
+                  "style": "decimal",
+                  "maximumFractionDigits": 0
+                }
+              }
+            }
+          ],
+          "rowLimit": 2000,
+          "filter": true,
+          "sortBy": [
+            {
+              "itemKey": "$gen_number_Percentage_5",
+              "sortOrder": 2
+            }
+          ],
+          "labelSettings": [
+            {
+              "columnId": "data_resourceId",
+              "label": "Setting"
+            },
+            {
+              "columnId": "total",
+              "label": "Compliant machines"
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "$gen_number_Percentage_5",
+            "sortOrder": 2
+          }
+        ]
+      },
+      "name": "query - 2",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "<br />\r\n#### Detailed information of setting: {data_resourceId}"
+      },
+      "name": "text - 13"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "1fbe429d-d726-4a75-a2dc-510f1feb08ed",
+            "version": "KqlParameterItem/1.0",
+            "name": "Status",
+            "type": 10,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n {\"value\": \"true\", \"label\": \"True\"},\r\n {\"value\": \"false\", \"label\": \"False\"}\r\n]",
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": "false"
+          }
+        ],
+        "style": "above",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "Status"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "GuestConfigurationResources\r\n| where properties.latestAssignmentReport.assignment.configuration.name == tostring(split('{GuestConfigurationwithVersion}',': ')[0])\r\n| where properties.latestAssignmentReport.assignment.configuration.version == extract('\"([^\"]*)\"', 1, tostring(split('{GuestConfigurationwithVersion}',': ')[1]))\r\n| mv-expand data = (parse_json(properties.latestAssignmentReport.resources))\r\n| where data.resourceId == '{data_resourceId}'\r\n| mv-expand reasons = (parse_json(data.reasons))\r\n| project machine = split(id,'/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/',0).[0],id, complianceStatus = data.complianceStatus,data_resourceId ='{data_resourceId}', tostring(reasons.phrase)\r\n| where ('{Status}' == \"\" or complianceStatus == \"{Status:value}\")",
+        "size": 0,
+        "showAnalytics": true,
+        "showExportToExcel": true,
+        "queryType": 1,
+        "resourceType": "microsoft.resourcegraph/resources",
+        "crossComponentResources": [
+          "{Subscriptions}"
+        ],
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "machine",
+              "formatter": 13,
+              "formatOptions": {
+                "linkTarget": "Resource",
+                "linkIsContextBlade": true,
+                "showIcon": true
+              }
+            },
+            {
+              "columnMatch": "id",
+              "formatter": 13,
+              "formatOptions": {
+                "linkTarget": "Resource",
+                "linkIsContextBlade": true,
+                "showIcon": true
+              }
+            },
+            {
+              "columnMatch": "complianceStatus",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "icons",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "thresholdValue": "false",
+                    "representation": "failed",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "success",
+                    "text": "{0}{1}"
+                  }
+                ],
+                "customColumnWidthSetting": "13ch"
+              }
+            },
+            {
+              "columnMatch": "reasons_phrase",
+              "formatter": 7,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "Guest Configuration",
+              "formatter": 13,
+              "formatOptions": {
+                "linkTarget": null,
+                "showIcon": true,
+                "customColumnWidthSetting": "49ch"
+              }
+            }
+          ],
+          "rowLimit": 2000,
+          "filter": true,
+          "labelSettings": [
+            {
+              "columnId": "machine",
+              "label": "Machine"
+            },
+            {
+              "columnId": "id",
+              "label": "Guest Configuration"
+            },
+            {
+              "columnId": "complianceStatus",
+              "label": "Status"
+            },
+            {
+              "columnId": "data_resourceId",
+              "label": "Setting"
+            },
+            {
+              "columnId": "reasons_phrase",
+              "label": "Reasons"
+            }
+          ]
+        },
+        "sortBy": []
+      },
+      "name": "query - 3"
+    }
+  ],
+  "fallbackResourceIds": [
+    "Azure Monitor"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
