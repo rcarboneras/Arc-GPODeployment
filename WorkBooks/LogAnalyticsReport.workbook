@@ -1,0 +1,428 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## Log Analytics Reporting"
+      },
+      "name": "text - 0"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "54bedbbe-20b6-4f63-b683-bfb162cddcfb",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "isRequired": true,
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2592000000
+                }
+              ],
+              "allowCustom": true
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": {
+              "durationMs": 2592000000
+            }
+          },
+          {
+            "id": "bf579fe9-a7f4-4877-8452-1e66fdfb1531",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscriptions",
+            "type": 6,
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "includeAll": false,
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "defaultValue": "value::all",
+            "value": [
+              "/subscriptions/59b301d0-77eb-4a76-aba5-53cb5731c342"
+            ]
+          },
+          {
+            "id": "d5aa52a2-f394-4159-9d03-ad34ac899f60",
+            "version": "KqlParameterItem/1.0",
+            "name": "Workspace",
+            "type": 5,
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "where type =~ 'microsoft.operationalinsights/workspaces'",
+            "crossComponentResources": [
+              "{Subscriptions}"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "defaultValue": "value::all",
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources",
+            "value": [
+              "/subscriptions/59b301d0-77eb-4a76-aba5-53cb5731c342/resourceGroups/rg-hublaws/providers/Microsoft.OperationalInsights/workspaces/LAWS-HUB"
+            ]
+          },
+          {
+            "id": "fe1ea778-a39b-4de2-bf7a-be11b9a31738",
+            "version": "KqlParameterItem/1.0",
+            "name": "Type",
+            "type": 2,
+            "query": "union withsource=tt *\r\n| distinct Type\r\n| sort by Type asc",
+            "crossComponentResources": [
+              "{Workspace}"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 0
+            },
+            "timeContextFromParameter": "TimeRange",
+            "queryType": 0,
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "value": "VMConnection"
+          },
+          {
+            "id": "f4740c55-2c4a-4f8e-9676-a434ab6326a6",
+            "version": "KqlParameterItem/1.0",
+            "name": "NumberMachines",
+            "label": "Machines to show",
+            "type": 2,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n    { \"value\":50, \"label\":\"50\"},\r\n    { \"value\":100, \"label\":\"100\", \"selected\":true },\r\n    { \"value\":500, \"label\":\"500\" },\r\n    { \"value\":1000, \"label\":\"1000\" },\r\n    { \"value\":1500, \"label\":\"1500\" },\r\n    { \"value\":2000, \"label\":\"2000\" },\r\n    { \"value\":2500, \"label\":\"2500\" },\r\n    { \"value\":3000, \"label\":\"3000\" },\r\n    { \"value\":100000, \"label\":\"ALL\" }\r\n]"
+          },
+          {
+            "id": "0ec4cfb4-6a57-47dc-a981-d6fd1aa763c1",
+            "version": "KqlParameterItem/1.0",
+            "name": "order",
+            "type": 1,
+            "isHiddenWhenLocked": true,
+            "value": "desc"
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 0"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 11,
+            "content": {
+              "version": "LinkItem/1.0",
+              "style": "tabs",
+              "tabStyle": "bigger",
+              "links": [
+                {
+                  "id": "ea2d6fd9-e825-4c94-b12c-ebdc8b693252",
+                  "cellValue": "selectedTab",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Statictics from table {Type}",
+                  "subTarget": "Availability",
+                  "style": "link"
+                }
+              ]
+            },
+            "name": "Navigation"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let DisplayBytes=(bytes:long) {  // Function to print size\r\n    let kb = bytes / 1024.0;\r\n    let mb = kb / 1024.0;\r\n    let gb = mb / 1024.0;\r\n    iff(gb > 1, strcat(toint(gb), \" GB\"),\r\n    iff(mb > 1, strcat(toint(mb), \" MB\"),\r\n    iff(kb > 1, strcat(toint(kb), \" KB\"),\r\n    strcat(bytes, \" Bytes\"))))\r\n};\r\nlet TotalDataIngested = toscalar(union *\r\n| where Type == \"{Type}\"\r\n| where TimeGenerated between ({TimeRange:start}..now())\r\n| where _IsBillable == true\r\n| summarize BillableDataBytes = sum(_BilledSize));\r\nlet TotalMachinesHeartBeat = tostring(toscalar(Heartbeat\r\n| distinct _ResourceId\r\n| count));\r\nlet TotalMachinesNumber = toscalar({Type}\r\n| distinct _ResourceId\r\n| count);\r\nlet AverageDataIngested = TotalDataIngested/TotalMachinesNumber;\r\nlet period = \"{TimeRange}\";\r\nlet totaldays = datetime_diff('day',{TimeRange:end},{TimeRange:start});\r\nprint Concept = \"Total number of machines sending HeartBeat data\", Value = TotalMachinesHeartBeat\r\n| union (print Concept = \"Total number of machines ingesting data\", Value = tostring(TotalMachinesNumber))\r\n| union (print Concept = strcat (\"Total data ingested in selected period: \", period), Value = DisplayBytes(TotalDataIngested))\r\n| union (print Concept = \"Average data per server\", Value = DisplayBytes(AverageDataIngested))\r\n| union (print Concept = \"Average data per day\", Value = DisplayBytes(TotalDataIngested/totaldays))",
+              "size": 3,
+              "showAnalytics": true,
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "gridSettings": {
+                "sortBy": [
+                  {
+                    "itemKey": "Concept",
+                    "sortOrder": 1
+                  }
+                ]
+              },
+              "sortBy": [
+                {
+                  "itemKey": "Concept",
+                  "sortOrder": 1
+                }
+              ]
+            },
+            "name": "query - 6"
+          }
+        ]
+      },
+      "customWidth": "50",
+      "name": "GeneralStatistics"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 11,
+            "content": {
+              "version": "LinkItem/1.0",
+              "style": "tabs",
+              "tabStyle": "bigger",
+              "links": [
+                {
+                  "id": "22f5d1f9-55df-46b0-a107-dad4ace5a89d",
+                  "cellValue": "selectedTab",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Statictics from Workspace",
+                  "subTarget": "Availability",
+                  "style": "link"
+                }
+              ]
+            },
+            "name": "Tab"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "    let DisplayBytes=(bytes:long) {  // Function to print size\r\n    let kb = bytes / 1000.0;\r\n    let mb = kb / 1000.0;\r\n    let gb = mb / 1000.0;\r\n    let tb = gb / 1000.0;\r\n    iff(gb > 1, strcat(toint(gb), \" GB\"),\r\n    iff(mb > 1, strcat(toint(mb), \" MB\"),\r\n    iff(kb > 1, strcat(toint(kb), \" KB\"),\r\n    strcat(bytes, \" Bytes\"))))\r\n};\r\n    Usage\r\n    | where TimeGenerated between (startofday({TimeRange:start})..now())\r\n    | where StartTime between (startofday({TimeRange:start})..now())\r\n    | where IsBillable == true\r\n    | summarize DataIngestedinbytes =sum(Quantity) * 1000 * 1000 by DataType\r\n    | extend DataIngested = DisplayBytes(DataIngestedinbytes)\r\n    | sort by DataIngestedinbytes\r\n    //| summarize IngestedGB=sum(Quantity) / 1.0E3 by DataType",
+              "size": 1,
+              "showAnalytics": true,
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "DataIngestedinbytes",
+                    "formatter": 5
+                  }
+                ]
+              },
+              "sortBy": []
+            },
+            "name": "query - 7"
+          }
+        ]
+      },
+      "customWidth": "50",
+      "name": "WorkspaceStatictics"
+    },
+    {
+      "type": 11,
+      "content": {
+        "version": "LinkItem/1.0",
+        "style": "nav",
+        "links": [
+          {
+            "id": "4a1074db-9212-4e3f-ac8c-a67210ee525f",
+            "cellValue": "order",
+            "linkTarget": "parameter",
+            "linkLabel": "Top Computers",
+            "subTarget": "desc",
+            "style": "primary"
+          },
+          {
+            "id": "fec1617b-efbc-4e90-9543-dc894c35ae3e",
+            "cellValue": "order",
+            "linkTarget": "parameter",
+            "linkLabel": "Bottom Computers",
+            "subTarget": "asc",
+            "style": "primary"
+          }
+        ]
+      },
+      "name": "links - 7"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let Availablehourlytable = {Type} | where TimeGenerated {TimeRange} | summarize heartbeatPerHour = count() by bin(TimeGenerated, 1h), _ResourceId;\r\nlet DispayBytes=(bytes:long) {  // Function to print size\r\n    let kb = bytes / 1024.0;\r\n    let mb = kb / 1024.0;\r\n    let gb = mb / 1024.0;\r\n    iff(gb > 1, strcat(toint(gb), \" GB\"),\r\n    iff(mb > 1, strcat(toint(mb), \" MB\"),\r\n    iff(kb > 1, strcat(toint(kb), \" KB\"),\r\n    strcat(bytes, \" Bytes\"))))\r\n};\r\nlet displayorder = iff (\"({order})\" == \"desc\",\"asc\",\"desc\");\r\nHeartbeat // Heartbeat records in the defined Range\r\n| where TimeGenerated > ago(6h)\r\n| summarize count() by TimeGenerated, _ResourceId\r\n| make-series HourTrend = count() on TimeGenerated from ago(6h) to now() step 10m by _ResourceId\r\n| join kind=leftouter  (\r\n    {Type} | make-series DailyDataTrend = count() on TimeGenerated from {TimeRange:start} to now() step 1d by _ResourceId\r\n    )\r\n    on _ResourceId\r\n    | join kind=leftouter ({Type} | where TimeGenerated {TimeRange} | summarize  TimeFromNow = (now() - max(TimeGenerated)) by _ResourceId) on _ResourceId\r\n    | join kind=leftouter (union withsource=tt *\r\n| where Type == \"{Type}\"\r\n| where TimeGenerated between ({TimeRange:start}..now())\r\n| where _IsBillable == true\r\n| summarize BillableDataBytes = sum(_BilledSize)  by _ResourceId, _IsBillable, Type\r\n| extend AvgDataSizePerDayBytes = BillableDataBytes/ (datetime_diff('day',{TimeRange:end},{TimeRange:start}))\r\n| extend BillableData = DispayBytes(BillableDataBytes),AvgDataSizePerDay = DispayBytes(AvgDataSizePerDayBytes)\r\n| project-away AvgDataSizePerDayBytes) on _ResourceId\r\n| top {NumberMachines} by BillableDataBytes {order}\r\n| extend [\"TimeAgo\"] = strcat( '🕒 ', strcat(case(TimeFromNow < 2m, strcat(toint(TimeFromNow / 1s), ' seconds'), TimeFromNow < 2h, strcat(toint(TimeFromNow / 1m), ' minutes'), TimeFromNow < 2d, strcat(toint(TimeFromNow / 1h), ' hours'), strcat(toint(TimeFromNow / 1d), ' days')), ' ago')),LastDataEntry = now() -TimeFromNow\r\n| project-away _ResourceId1, _ResourceId2,_ResourceId3, _IsBillable,TimeFromNow\r\n",
+              "size": 3,
+              "showAnalytics": true,
+              "title": "Data ingestion in table {Type}. {NumberMachines} Machines",
+              "timeContextFromParameter": "TimeRange",
+              "showRefreshButton": true,
+              "showExportToExcel": true,
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "_ResourceId",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "23ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "HourTrend",
+                    "formatter": 10,
+                    "formatOptions": {
+                      "min": 0,
+                      "max": 1,
+                      "palette": "redGreen",
+                      "customColumnWidthSetting": "224px"
+                    }
+                  },
+                  {
+                    "columnMatch": "TimeGenerated",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "DailyDataTrend",
+                    "formatter": 10,
+                    "formatOptions": {
+                      "palette": "blueDark"
+                    }
+                  },
+                  {
+                    "columnMatch": "TimeGenerated1",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "Type",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "15.1429ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "Computer",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "42.7143ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "DailyTrend",
+                    "formatter": 10,
+                    "formatOptions": {
+                      "palette": "blueDark"
+                    }
+                  },
+                  {
+                    "columnMatch": "totalAvailableHours",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "max": 720,
+                      "palette": "redGreen"
+                    }
+                  },
+                  {
+                    "columnMatch": "availabilityRate",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "max": 100,
+                      "palette": "redGreen"
+                    },
+                    "numberFormat": {
+                      "unit": 1,
+                      "options": {
+                        "style": "decimal",
+                        "maximumFractionDigits": 2
+                      }
+                    }
+                  }
+                ],
+                "rowLimit": 5000,
+                "filter": true,
+                "sortBy": [
+                  {
+                    "itemKey": "BillableData",
+                    "sortOrder": 2
+                  }
+                ],
+                "labelSettings": [
+                  {
+                    "columnId": "HourTrend",
+                    "label": "HeartBeat Last 6 hour",
+                    "comment": "Each column represents 1 minute"
+                  }
+                ]
+              },
+              "sortBy": [
+                {
+                  "itemKey": "BillableData",
+                  "sortOrder": 2
+                }
+              ]
+            },
+            "name": "query - 0"
+          }
+        ]
+      },
+      "name": "AvailabilityGroup",
+      "styleSettings": {
+        "showBorder": true
+      }
+    }
+  ],
+  "fallbackResourceIds": [
+    "azure monitor"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
