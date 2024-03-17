@@ -4,9 +4,9 @@
     {
       "type": 1,
       "content": {
-        "json": "# Guest Configuration Detailed Report"
+        "json": "# Guest Configuration Detailed Report\r\n<img align=\"left\" src=\"https://code.benco.io/icon-collection/azure-icons/Policy.svg\" alt=\"drawing\" style=\"width:80px;\"/>"
       },
-      "name": "text - 8"
+      "name": "Tittle"
     },
     {
       "type": 9,
@@ -51,7 +51,7 @@
           {
             "id": "f3acd87e-1b22-4daf-ac22-ab491e9ff965",
             "version": "KqlParameterItem/1.0",
-            "name": "ShowVersionHistory",
+            "name": "Help",
             "type": 2,
             "isRequired": true,
             "typeSettings": {
@@ -63,17 +63,18 @@
           }
         ],
         "style": "pills",
-        "queryType": 0
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
       },
       "name": "parameters - 1"
     },
     {
       "type": 1,
       "content": {
-        "json": "## Versioning and Changes\r\n| Version | Date       | Changes                                          |\r\n| ------- | ---------- | ------------------------------------------------ |\r\n| 1.0     | 2023-12-04 | - Initial release of the Azure Workbook.         |\r\n\r\n"
+        "json": "## Release Notes\r\n| Key       | Value                                \t\t                |\r\n|-------------------|---------------------------------------------------------------|\r\n| `Version`\t\t\t| 2.1\t\t  |\r\n"
       },
       "conditionalVisibility": {
-        "parameterName": "ShowVersionHistory",
+        "parameterName": "Help",
         "comparison": "isEqualTo",
         "value": "true"
       },
@@ -142,6 +143,14 @@
       "name": "AzurePolicies"
     },
     {
+      "type": 1,
+      "content": {
+        "json": "# Configuration Compliance\r\n<img align=\"left\" src=\"https://code.benco.io/icon-collection/azure-icons/Compliance.svg\" alt=\"drawing\" style=\"width:80px;\"/>\r\n## {GuestConfigurationwithVersion}\r\n"
+      },
+      "customWidth": "30",
+      "name": "text - 14"
+    },
+    {
       "type": 3,
       "content": {
         "version": "KqlItem/1.0",
@@ -196,7 +205,7 @@
           ]
         }
       },
-      "customWidth": "50",
+      "customWidth": "35",
       "name": "SettingsCompliance"
     },
     {
@@ -225,7 +234,7 @@
             "timeContext": {
               "durationMs": 86400000
             },
-            "value": "NonCompliant"
+            "value": null
           }
         ],
         "style": "above",
@@ -481,7 +490,7 @@
             "timeContext": {
               "durationMs": 86400000
             },
-            "value": "false"
+            "value": null
           }
         ],
         "style": "above",
@@ -594,7 +603,7 @@
     }
   ],
   "fallbackResourceIds": [
-    "Azure Monitor"
+    "azure monitor"
   ],
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
 }
