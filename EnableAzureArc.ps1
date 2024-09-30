@@ -161,7 +161,7 @@ Function Install-ArcAgent {
 
     Write-Log -msg "Installing Azure Connected Machine Agent" -msgtype INFO
     Set-Location $workfolder
-    $exitCode = (Start-Process -FilePath msiexec.exe -ArgumentList @("/i", "$env:TEMP\AzureConnectedMachineAgent.msi" , "/l*v", "Azcmagentinstallationlog.txt", "/qn") -Wait -Passthru).ExitCode
+    $exitCode = (Start-Process -FilePath msiexec.exe -ArgumentList @("/i", "$env:TEMP\AzureConnectedMachineAgent.msi" , "/l*v", "Azcmagentinstallationlog.txt", "/qn", "REBOOT=ReallySuppress") -Wait -Passthru).ExitCode
     $message = (net helpmsg $exitCode)
     if ($exitCode -ne 0) {
 
@@ -235,7 +235,7 @@ Function Update-ArcAgent {
 
     Write-Log -msg "Updating Azure Connected Machine Agent" -msgtype INFO
     Set-Location $workfolder
-    $exitCode = (Start-Process -FilePath msiexec.exe -ArgumentList @("/i", "$env:TEMP\AzureConnectedMachineAgent.msi" , "/l*v", "Azcmagentupdatesetup.txt", "/qn") -Wait -Passthru).ExitCode
+    $exitCode = (Start-Process -FilePath msiexec.exe -ArgumentList @("/i", "$env:TEMP\AzureConnectedMachineAgent.msi" , "/l*v", "Azcmagentupdatesetup.txt", "/qn", "REBOOT=ReallySuppress") -Wait -Passthru).ExitCode
     $message = (net helpmsg $exitCode)
     if ($exitCode -ne 0) {
 
