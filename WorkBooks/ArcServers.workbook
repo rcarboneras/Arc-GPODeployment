@@ -83,21 +83,7 @@
               "durationMs": 86400000
             },
             "queryType": 1,
-            "resourceType": "microsoft.resourcegraph/resources",
-            "value": [
-              "",
-              "1.39",
-              "1.46",
-              "1.47",
-              "1.48",
-              "1.49",
-              "1.53",
-              "1.55",
-              "1.57",
-              "1.58",
-              "1.59",
-              "1.60"
-            ]
+            "resourceType": "microsoft.resourcegraph/resources"
           },
           {
             "id": "a53ab73a-b065-42b5-be66-533fce7e983e",
@@ -541,6 +527,7 @@
               ],
               "visualization": "piechart",
               "chartSettings": {
+                "showLegend": true,
                 "seriesLabelSettings": [
                   {
                     "seriesName": "Connected",
@@ -554,9 +541,12 @@
                   {
                     "seriesName": "Disconnected",
                     "color": "redBright"
+                  },
+                  {
+                    "seriesName": "Expired",
+                    "color": "redDark"
                   }
                 ],
-                "showLegend": true,
                 "ySettings": {
                   "numberFormatSettings": {
                     "unit": 0,
