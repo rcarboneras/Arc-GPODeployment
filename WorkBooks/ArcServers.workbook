@@ -12,9 +12,6 @@
       "type": 9,
       "content": {
         "version": "KqlParameterItem/1.0",
-        "crossComponentResources": [
-          "{Subscription}"
-        ],
         "parameters": [
           {
             "id": "5ccbaa77-2a42-4a07-a877-b5a3a6297703",
@@ -86,7 +83,21 @@
               "durationMs": 86400000
             },
             "queryType": 1,
-            "resourceType": "microsoft.resourcegraph/resources"
+            "resourceType": "microsoft.resourcegraph/resources",
+            "value": [
+              "",
+              "1.39",
+              "1.46",
+              "1.47",
+              "1.48",
+              "1.49",
+              "1.53",
+              "1.55",
+              "1.57",
+              "1.58",
+              "1.59",
+              "1.60"
+            ]
           },
           {
             "id": "a53ab73a-b065-42b5-be66-533fce7e983e",
@@ -141,11 +152,11 @@
             "isGlobal": true,
             "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where properties.status == \"Connected\"\r\n| project versionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(properties.agentVersion)), versionparsed = parse_version(tostring(properties.agentVersion))\r\n| sort by versionparsed\r\n| limit 1\r\n| project versionshort",
             "crossComponentResources": [
-              "{Subscription}"
+              "value::tenant"
             ],
             "isHiddenWhenLocked": true,
             "queryType": 1,
-            "resourceType": "microsoft.resourcegraph/resources"
+            "resourceType": "microsoft.resources/tenants"
           },
           {
             "id": "55732f3e-76c0-4646-bf40-1b0cd028df41",
@@ -154,11 +165,11 @@
             "type": 1,
             "query": "AdvisorResources\r\n| where type == 'microsoft.advisor/recommendations'\r\n| where properties.category == 'HighAvailability'\r\n| where properties.shortDescription.solution == 'Upgrade to the latest version of the Azure Connected Machine agent'\r\n| limit 1\r\n| extend latestVersion = tostring(properties.extendedProperties.latestVersion)\r\n| project latestVersion",
             "crossComponentResources": [
-              "{Subscription}"
+              "value::tenant"
             ],
             "isHiddenWhenLocked": true,
             "queryType": 1,
-            "resourceType": "microsoft.resourcegraph/resources"
+            "resourceType": "microsoft.resources/tenants"
           },
           {
             "id": "9e1583d4-77d1-4586-aa32-54708154bf55",
@@ -169,8 +180,19 @@
               {
                 "criteriaContext": {
                   "leftOperand": "QueryAdvisor",
-                  "operator": "is Empty",
+                  "operator": "<",
                   "rightValType": "param",
+                  "rightVal": "HighestVersion",
+                  "resultValType": "param",
+                  "resultVal": "HighestVersion"
+                }
+              },
+              {
+                "criteriaContext": {
+                  "leftOperand": "QueryAdvisor",
+                  "operator": "is Empty",
+                  "rightValType": "static",
+                  "rightVal": "\"\"",
                   "resultValType": "param",
                   "resultVal": "HighestVersion"
                 }
@@ -187,7 +209,7 @@
         ],
         "style": "pills",
         "queryType": 0,
-        "resourceType": "microsoft.operationalinsights/workspaces"
+        "resourceType": "microsoft.resources/tenants"
       },
       "name": "parameters - 7"
     },
@@ -195,7 +217,7 @@
       "type": 3,
       "content": {
         "version": "KqlItem/1.0",
-        "query": "let Monthtoname=(a:int){\r\ncase(a==1,\"January\",\r\n     a==2,\"February\",\r\n     a==3,\"March\",\r\n     a==4,\"April\",\r\n     a==5,\"May\",\r\n     a==6,\"June\",\r\n     a==7,\"July\",\r\n     a==8,\"August\",\r\n     a==9,\"September\",\r\n     a==10,\"October\",\r\n     a==11,\"November\",\r\n     a==12,\"December\",\r\n     \"Error\"\r\n)\r\n};\r\nAzureARCAgentLatestVersion_CL\r\n| summarize arg_max(TimeGenerated, *)\r\n| project extracted=parse_json(AgentLatestVersionHistory_s)\r\n| mv-expand extracted\r\n| project RawData=split(extracted,\": \")\r\n| extend tostring(YearMonth=RawData[0])\r\n| extend tostring(Version=RawData[1])\r\n| serialize N = row_number()\r\n| extend VersionsUrl = \"https://docs.microsoft.com/en-us/azure/azure-arc/servers/agent-release-notes?WT.mc_id=Portal-fx\"\r\n| extend YearMonthToday = strcat (Monthtoname(datetime_part(\"Month\",now())), \" \", datetime_part(\"Year\",now()))\r\n| project N,YearMonth, Version,VersionsUrl,[\"_\"] = iff( YearMonth == YearMonthToday, \"New Version\",\"\")\r\n\r\n",
+        "query": "let Monthtoname=(a:int){\r\ncase(a==1,\"January\",\r\n     a==2,\"February\",\r\n     a==3,\"March\",\r\n     a==4,\"April\",\r\n     a==5,\"May\",\r\n     a==6,\"June\",\r\n     a==7,\"July\",\r\n     a==8,\"August\",\r\n     a==9,\"September\",\r\n     a==10,\"October\",\r\n     a==11,\"November\",\r\n     a==12,\"December\",\r\n     \"Error\"\r\n)\r\n};\r\nAzureARCAgentLatestVersion_CL\r\n| summarize arg_max(TimeGenerated, *)\r\n| project extracted=parse_json(AgentLatestVersionHistory_s)\r\n| mv-expand extracted\r\n| project RawData=split(extracted,\": \")\r\n| extend tostring(YearMonth=RawData[0])\r\n| extend tostring(Version=RawData[1])\r\n| serialize N = row_number()\r\n| extend VersionsUrl = \"https://docs.microsoft.com/en-us/azure/azure-arc/servers/agent-release-notes?WT.mc_id=Portal-fx\"\r\n| extend YearMonthToday = strcat (Monthtoname(datetime_part(\"Month\",now())), \" \", datetime_part(\"Year\",now()))\r\n| project N,YearMonth, Version,VersionsUrl,[\"_\"] = iff( YearMonth == YearMonthToday, \"New Version\",\"\")\r\n| where N <=10\r\n\r\n",
         "size": 3,
         "title": "Agent Version history:",
         "timeContext": {
@@ -553,7 +575,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend agentversion = properties.agentVersion, OperatingSystem = properties.osSku, Status = properties.status, lastStatusChange = properties.lastStatusChange\r\n| where OperatingSystem in ({OperatingSystem})\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| where agentversionshort in ({Versions})\r\n| extend Updated = iff (toreal(agentversionshort) >= {MaxAgentVersionAvailable},0,1)\r\n| project lastStatusChange, Resource = id, OperatingSystem, Status, agentversion, Updated , Location = location, Subscription = subscriptionId, ['Resource group'] = strcat('/subscriptions/', subscriptionId, '/resourceGroups/', resourceGroup)\r\n| order by Resource\r\n\r\n\r\n\r\n",
+              "query": "resources\r\n| where type == \"microsoft.hybridcompute/machines\"\r\n| where name like \"{ServerName}\"\r\n| where resourceGroup in ({ResourceGroup})\r\n| extend agentversion = properties.agentVersion, OperatingSystem = properties.osSku, Status = properties.status, lastStatusChange = properties.lastStatusChange\r\n| where OperatingSystem in ({OperatingSystem})\r\n| extend agentversionshort = extract(@\"(\\d+).(\\d+)\", 0, tostring(agentversion))\r\n| extend model = tostring(properties.detectedProperties.model)\r\n| where agentversionshort in ({Versions})\r\n| extend Updated = iff (toreal(agentversionshort) == {MaxAgentVersionAvailable},0,1)\r\n| extend ExSvc = tostring(properties.serviceStatuses.extensionService.status)\r\n| extend GcSvc = tostring(properties.serviceStatuses.guestConfigurationService.status)\r\n| project lastStatusChange, Subscription = subscriptionId, ['Resource group'] = strcat('/subscriptions/', subscriptionId, '/resourceGroups/', resourceGroup), Resource = id, OperatingSystem,Type = iff(model contains \"virtual\" or  model contains \"VMWare\",\"Virtual\",\"Physical\"), Status, agentversion, Updated , Location = location, ExSvc, GcSvc\r\n| order by Resource\r\n\r\n\r\n\r\n",
               "size": 2,
               "showAnalytics": true,
               "showExportToExcel": true,
@@ -568,21 +590,44 @@
                     "columnMatch": "lastStatusChange",
                     "formatter": 6,
                     "formatOptions": {
-                      "customColumnWidthSetting": "26.2857ch"
+                      "customColumnWidthSetting": "25.4286ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "Subscription",
+                    "formatter": 15,
+                    "formatOptions": {
+                      "linkTarget": "Resource",
+                      "showIcon": true,
+                      "customColumnWidthSetting": "31.1429ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "Resource group",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "24.5714ch"
                     }
                   },
                   {
                     "columnMatch": "Resource",
                     "formatter": 0,
                     "formatOptions": {
-                      "customColumnWidthSetting": "21.4286ch"
+                      "customColumnWidthSetting": "24.5714ch"
                     }
                   },
                   {
                     "columnMatch": "OperatingSystem",
                     "formatter": 0,
                     "formatOptions": {
-                      "customColumnWidthSetting": "33.8571ch"
+                      "customColumnWidthSetting": "32ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "Type",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "14ch"
                     }
                   },
                   {
@@ -610,14 +655,7 @@
                           "text": "{0}{1}"
                         }
                       ],
-                      "customColumnWidthSetting": "26ch"
-                    }
-                  },
-                  {
-                    "columnMatch": "agentversion",
-                    "formatter": 0,
-                    "formatOptions": {
-                      "customColumnWidthSetting": "19ch"
+                      "customColumnWidthSetting": "21.4286ch"
                     }
                   },
                   {
@@ -639,7 +677,7 @@
                           "text": ""
                         }
                       ],
-                      "customColumnWidthSetting": "12.4286ch"
+                      "customColumnWidthSetting": "11.5714ch"
                     }
                   },
                   {
@@ -650,12 +688,57 @@
                     }
                   },
                   {
-                    "columnMatch": "Subscription",
-                    "formatter": 15,
+                    "columnMatch": "ExSvc",
+                    "formatter": 18,
                     "formatOptions": {
-                      "linkTarget": "Resource",
-                      "showIcon": true,
-                      "customColumnWidthSetting": "32.5ch"
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "running",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "active",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "stopped",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "GcSvc",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "running",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "active",
+                          "representation": "success",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "thresholdValue": null,
+                          "representation": "stopped",
+                          "text": "{0}{1}"
+                        }
+                      ]
                     }
                   },
                   {
@@ -681,20 +764,9 @@
                   }
                 ],
                 "rowLimit": 5000,
-                "filter": true,
-                "sortBy": [
-                  {
-                    "itemKey": "$gen_thresholds_Updated_5",
-                    "sortOrder": 1
-                  }
-                ]
+                "filter": true
               },
-              "sortBy": [
-                {
-                  "itemKey": "$gen_thresholds_Updated_5",
-                  "sortOrder": 1
-                }
-              ]
+              "sortBy": []
             },
             "name": "query - 1"
           }
@@ -706,5 +778,6 @@
   "fallbackResourceIds": [
     "azure monitor"
   ],
+  "fromTemplateId": "sentinel-UserWorkbook",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
 }
