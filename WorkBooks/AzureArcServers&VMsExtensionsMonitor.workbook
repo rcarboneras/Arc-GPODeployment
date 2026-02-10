@@ -840,7 +840,7 @@
                     "formatter": 13,
                     "formatOptions": {
                       "linkTarget": "Resource",
-                      "linkIsContextBlade": true,
+                      "linkIsContextBlade": false,
                       "showIcon": true,
                       "customColumnWidthSetting": "26.8571ch"
                     }
